@@ -3,8 +3,29 @@ package listen
 import (
 	"flag"
 	"log"
+	"os"
+	"os/signal"
 
 	"github.com/bwmarrin/discordgo"
+)
+
+var (
+	commands = []*discordgo.ApplicationCommand{
+		{
+			Name:        "seach",
+			Description: "search for a movie or show",
+			Type:        discordgo.ChatApplicationCommand,
+			// TODO: auto suggestions
+			//Options:     []*discordgo.ApplicationCommand{},
+		},
+		{
+			Name:        "ping",
+			Description: "ping the bot",
+			Type:        discordgo.ChatApplicationCommand,
+			// TODO: auto suggestions
+			//Options:     []*discordgo.ApplicationCommand{},
+		},
+	}
 )
 
 func Run(args []string) {
@@ -17,38 +38,54 @@ func Run(args []string) {
 		return
 	}
 
-	var (
-		commands = []*discordgo.ApplicationCommand{
-			{
-				Name:        "seach",
-				Description: "search for a movie or show",
-				Type:        discordgo.ChatApplicationCommand,
-				// TODO: auto suggestions
-				//Options:     []*discordgo.ApplicationCommand{},
-			},
-			{
-				Name:        "ping",
-				Description: "ping the bot",
-				Type:        discordgo.ChatApplicationCommand,
-				// TODO: auto suggestions
-				//Options:     []*discordgo.ApplicationCommand{},
-			},
-		}
-	)
-
-	_ = commands
-
 	discord, err := discordgo.New("Bot " + *token)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	discord.AddHandler(Ping)
+	discord.AddHandler(HandleInteraction)
+	discord.AddHandler(Connected)
+	err = discord.Open()
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer discord.Close()
+	for _, v := range commands {
+		_, err := discord.ApplicationCommandCreate(discord.State.User.ID, "", v)
+		if err != nil {
+			log.Printf("failed to register command: %v: err: %v \n", v, err)
+		}
+		log.Printf("registered: %s\n", v.Name)
+	}
+	log.Printf("listening...")
+
+	stop := make(chan os.Signal)
+	signal.Notify(stop, os.Interrupt)
+	<-stop
+	log.Println("shutting down...")
+}
+
+func Connected(s *discordgo.Session, r *discordgo.Ready) {
+	log.Printf("connected to: %s\n", r.User.String())
+}
+
+func HandleInteraction(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	name := i.ApplicationCommandData().Name
+	switch name {
+	case "ping":
+		Ping(s, i)
+		return
+	default:
+		log.Printf("didn't recognize: %s\n", name)
+		return
+	}
 }
 
 func Ping(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	log.Println("pinged by %s", i.User.ID)
+	log.Printf("pinged by %s\n", i.Member.User.ID)
 
 	response := discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
