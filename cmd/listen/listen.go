@@ -31,7 +31,9 @@ var (
 func Run(args []string) {
 	flags := flag.NewFlagSet("", flag.ExitOnError)
 	token := flags.String("token", "", "token for the discord bot")
+	radarURL := flags.String("radarURL", "https://localhost:7878/api/v3", "url of radar service")
 	flags.Parse(args)
+	_ = radarURL
 
 	if token == nil || *token == "" {
 		log.Println("expected non empty bot token")
@@ -75,6 +77,8 @@ func Connected(s *discordgo.Session, r *discordgo.Ready) {
 func HandleInteraction(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	name := i.ApplicationCommandData().Name
 	switch name {
+	case "search":
+		Search(s, i)
 	case "ping":
 		Ping(s, i)
 		return
@@ -82,6 +86,10 @@ func HandleInteraction(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		log.Printf("didn't recognize: %s\n", name)
 		return
 	}
+}
+
+func Search(s *discordgo.Session, i *discordgo.InteractionCreate) {
+
 }
 
 func Ping(s *discordgo.Session, i *discordgo.InteractionCreate) {
