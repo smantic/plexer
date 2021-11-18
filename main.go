@@ -21,11 +21,9 @@ func main() {
 	}
 
 	switch os.Args[1] {
-	// print help message
 	case "help":
 		fmt.Printf(cmd.HelpStr)
 		return
-	// serve an http server
 	case "listen":
 		listen.Run(os.Args[2:])
 	}
