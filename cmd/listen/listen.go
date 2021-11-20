@@ -10,7 +10,6 @@ import (
 	"github.com/smantic/plexer/internal/discord"
 	"github.com/smantic/plexer/internal/service"
 	"github.com/smantic/plexer/pkg/radarr"
-	"github.com/webtor-io/go-jackett"
 )
 
 type Config struct {
@@ -27,12 +26,14 @@ func Run(args []string) {
 
 	flags := flag.NewFlagSet("", flag.ExitOnError)
 	flags.StringVar(&c.DiscordToken, "token", "", "token for the discord bot")
-	flags.StringVar(&c.RadarrURL, "radarURL", "https://localhost:7878/api/v3", "url of radar service")
+	flags.StringVar(&c.RadarrURL, "radarURL", "http://localhost:7878/api/v3", "url of radar service")
 	flags.StringVar(&c.RadarrKey, "radarrKey", "", "radarr api key")
-	flags.StringVar(&c.JackettURL, "jackett", "", "url of jacket service")
-	flags.StringVar(&c.JackettKey, "jackettKey", "", "jackett api key")
 
-	flags.Parse(args)
+	err := flags.Parse(args)
+	if err != nil {
+		log.Println(err)
+		return
+	}
 
 	if c.DiscordToken == "" {
 		log.Println("expected non empty bot token")
@@ -46,23 +47,23 @@ func Run(args []string) {
 			BaseURL: c.RadarrURL,
 			Apikey:  c.RadarrKey,
 		},
-		Jackett: jackett.NewJackett(&jackett.Settings{
-			ApiURL: c.JackettURL,
-			ApiKey: c.JackettKey,
-		}),
 	}
 
 	s, err := discord.NewSession(c.DiscordToken, &svc)
 	if err != nil {
-		log.Printf("failed to get bot: %w", err)
+		log.Printf("failed to get got: %v", err)
 		return
 	}
-	s.Init(ctx)
+	err = s.Init(ctx)
+	if err != nil {
+		log.Println(err)
+	}
+	log.Printf("listening...")
 
 	<-ctx.Done()
 	log.Println("shutting down...")
 
-	s.Close()
+	//s.Close()
 
 	cancel()
 }

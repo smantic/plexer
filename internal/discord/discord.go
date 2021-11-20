@@ -2,6 +2,7 @@ package discord
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	"github.com/bwmarrin/discordgo"
@@ -11,11 +12,17 @@ import (
 var (
 	commands = []*discordgo.ApplicationCommand{
 		{
-			Name:        "seach",
+			Name:        "search",
 			Description: "search for a movie or show",
 			Type:        discordgo.ChatApplicationCommand,
-			// TODO: auto suggestions
-			//Options:     []*discordgo.ApplicationCommand{},
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "title",
+					Description: "title of movie you want to find",
+					Required:    true,
+				},
+			},
 		},
 		{
 			Name:        "ping",
@@ -27,21 +34,17 @@ var (
 	}
 )
 
-// Discord is a service struct for handling discord commands
+// Discord is a service struct for handling discord commands.
 type Discord struct {
 	token   string
 	session *discordgo.Session
 	service *service.Service
 }
 
+// NewSession creates a new session.
 func NewSession(token string, svc *service.Service) (Discord, error) {
 
 	discord, err := discordgo.New("Bot " + token)
-	if err != nil {
-		return Discord{}, err
-	}
-
-	err = discord.Open()
 	if err != nil {
 		return Discord{}, err
 	}
@@ -54,23 +57,45 @@ func NewSession(token string, svc *service.Service) (Discord, error) {
 }
 
 func (d *Discord) Close() {
-	d.session.Close()
+	err := d.session.Close()
+	if err != nil {
+		log.Println(err)
+	}
 }
 
-// Init starts the discord service and adds handlers
-func (d *Discord) Init(ctx context.Context) {
+// Init starts the discord service and adds handlers.
+func (d *Discord) Init(ctx context.Context) error {
 
 	d.session.AddHandler(d.HandleInteraction)
 	d.session.AddHandler(d.Connected)
 
+	err := d.session.Open()
+	if err != nil {
+		return fmt.Errorf("failed to open discord ws: %w", err)
+	}
+
+	existing, err := d.session.ApplicationCommands(d.session.State.User.ID, "")
+	if err != nil {
+		return fmt.Errorf("failed to get existing commands: %w", err)
+	}
+
+	log.Printf("cleaning old commands")
+	for _, e := range existing {
+		err := d.session.ApplicationCommandDelete(d.session.State.User.ID, "", e.ID)
+		if err != nil {
+			return fmt.Errorf("failed to delete command %v: %w", e, err)
+		}
+	}
+
 	for _, v := range commands {
 		_, err := d.session.ApplicationCommandCreate(d.session.State.User.ID, "", v)
 		if err != nil {
-			log.Printf("failed to register command: %v: err: %v \n", v, err)
+			return fmt.Errorf("failed to register command: %v: err: %w \n", v, err)
 		}
 		log.Printf("registered: %s\n", v.Name)
 	}
-	log.Printf("listening...")
+
+	return nil
 }
 
 func (d *Discord) Connected(s *discordgo.Session, r *discordgo.Ready) {
@@ -78,15 +103,19 @@ func (d *Discord) Connected(s *discordgo.Session, r *discordgo.Ready) {
 }
 
 func (d *Discord) HandleInteraction(s *discordgo.Session, i *discordgo.InteractionCreate) {
+
+	ctx := context.TODO()
 	name := i.ApplicationCommandData().Name
+	log.Printf("received command: %s\n", name)
 	switch name {
-	case "search":
-		d.Search(s, i)
-	case "ping":
+	case commands[0].Name:
+		d.Search(ctx, s, i)
+		return
+	case commands[1].Name:
 		d.Ping(s, i)
 		return
 	default:
-		log.Printf("didn't recognize: %s\n", name)
+		log.Printf("didn't recognize command: %s\n", name)
 		return
 	}
 }

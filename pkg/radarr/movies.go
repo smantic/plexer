@@ -32,7 +32,7 @@ type Movie struct {
 	Id                  int      `json:"id"`
 	Title               string   `json:"title"`
 	SortTitle           string   `json:"sortTitle"`
-	SizeOnDisk          string   `json:"sizeOnDisk"`
+	SizeOnDisk          int      `json:"sizeOnDisk"`
 	Overview            string   `json:"overview"`
 	InCinemas           string   `json:"inCinemas"`
 	PhysicalRelease     string   `json:"physicalRelease"`
@@ -43,11 +43,11 @@ type Movie struct {
 	YouTubeTrailerId    string   `json:"youTubeTrailerId"`
 	Monitored           bool     `json:"monitored"`
 	MinimumAvailability string   `json:"minimumAvailability"`
-	IsAvailable         string   `json:"isAvailable"`
+	IsAvailable         bool     `json:"isAvailable"`
 	FolderName          string   `json:"folderName"`
 	Runtime             int      `json:"runtime"`
 	CleanTitle          string   `json:"cleanTitle"`
-	ImdbID              int      `json:"imdbId"`
+	ImdbID              string   `json:"imdbId"`
 	TitleSlug           string   `json:"titleSlug"`
 	Certification       string   `json:"certification"`
 	Genres              []string `json:"genres"`
@@ -67,6 +67,7 @@ func (c *Client) AddMovie(ctx context.Context, m *Movie) error {
 	if err != nil {
 		return err
 	}
+	response.Body.Close()
 
 	if response.StatusCode != http.StatusOK {
 		return fmt.Errorf("non 200 response")
@@ -87,6 +88,8 @@ func (c *Client) Search(ctx context.Context, query string) ([]Movie, error) {
 	if err != nil {
 		return result, err
 	}
+	defer response.Body.Close()
+
 	err = json.NewDecoder(response.Body).Decode(&result)
 	if err != nil {
 		return result, err
