@@ -19,7 +19,7 @@ var (
 				{
 					Type:         discordgo.ApplicationCommandOptionString,
 					Name:         "title",
-					Description:  "title of movie you want to find",
+					Description:  "title of movie or show you want to add",
 					Required:     true,
 					Autocomplete: true,
 				},
@@ -31,10 +31,11 @@ var (
 			Type:        discordgo.ChatApplicationCommand,
 			Options: []*discordgo.ApplicationCommandOption{
 				{
-					Type:        discordgo.ApplicationCommandOptionString,
-					Name:        "title",
-					Description: "title of movie you want to find",
-					Required:    true,
+					Type:         discordgo.ApplicationCommandOptionString,
+					Name:         "title",
+					Description:  "title of movie or show you want to find",
+					Required:     true,
+					Autocomplete: true,
 				},
 			},
 		},

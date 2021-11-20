@@ -4,9 +4,20 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/smantic/plexer/pkg/radarr"
 )
+
+func combineOpts(opts []*discordgo.ApplicationCommandInteractionDataOption) string {
+
+	b := strings.Builder{}
+	for _, o := range opts {
+		b.WriteString(o.StringValue())
+	}
+	return b.String()
+}
 
 func (d *Discord) Add(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) error {
 
@@ -25,21 +36,14 @@ func (d *Discord) Add(ctx context.Context, s *discordgo.Session, i *discordgo.In
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &data,
 		}
+
 	case discordgo.InteractionApplicationCommandAutocomplete:
 		query := i.ApplicationCommandData().Options[0].StringValue()
 		results, err := d.service.Search(ctx, query)
 		if err != nil {
 			return fmt.Errorf("failed to search for auto completes: %w", err)
 		}
-
-		choices := make([]*discordgo.ApplicationCommandOptionChoice, 0, len(results))
-		for _, m := range results {
-			c := discordgo.ApplicationCommandOptionChoice{
-				Name:  m.Title,
-				Value: m.Title,
-			}
-			choices = append(choices, &c)
-		}
+		choices := getAutoCompleteChoicesFrom(results)
 
 		response = discordgo.InteractionResponse{
 			Type: discordgo.InteractionApplicationCommandAutocompleteResult,
@@ -47,7 +51,25 @@ func (d *Discord) Add(ctx context.Context, s *discordgo.Session, i *discordgo.In
 				Choices: choices,
 			},
 		}
+
 	}
 
 	return s.InteractionRespond(i.Interaction, &response)
+}
+
+func getAutoCompleteChoicesFrom(movies []radarr.Movie) []*discordgo.ApplicationCommandOptionChoice {
+
+	choices := make([]*discordgo.ApplicationCommandOptionChoice, 0, len(movies))
+	for i, m := range movies {
+		c := discordgo.ApplicationCommandOptionChoice{
+			Name:  m.Title,
+			Value: m.Title,
+		}
+		choices = append(choices, &c)
+
+		if i >= 7 {
+			break
+		}
+	}
+	return choices
 }
