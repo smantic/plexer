@@ -3,7 +3,6 @@ package discord
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
@@ -26,15 +25,32 @@ func (d *Discord) Add(ctx context.Context, s *discordgo.Session, i *discordgo.In
 	switch i.Type {
 	case discordgo.InteractionApplicationCommand:
 
-		movie := i.ApplicationCommandData().Options[0].Value
-		log.Printf("add :%v\n", movie)
+		title := i.ApplicationCommandData().Options[0].StringValue()
 
-		data := discordgo.InteractionResponseData{
-			Content: "adding: " + i.ApplicationCommandData().Options[0].StringValue(),
+		results, err := d.service.Search(ctx, title)
+		if err != nil {
+			return fmt.Errorf("failed to search for movie to add: %w", err)
 		}
+
+		if len(results) == 0 {
+			data := discordgo.InteractionResponseData{
+				Content: "couldn't find a movie to add like: " + title,
+			}
+			response = discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &data,
+			}
+			break
+		}
+
+		err = d.service.Add(ctx, results[0])
+		if err != nil {
+			return err
+		}
+
 		response = discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &data,
+			Data: &discordgo.InteractionResponseData{Content: title},
 		}
 
 	case discordgo.InteractionApplicationCommandAutocomplete:
@@ -51,7 +67,6 @@ func (d *Discord) Add(ctx context.Context, s *discordgo.Session, i *discordgo.In
 				Choices: choices,
 			},
 		}
-
 	}
 
 	return s.InteractionRespond(i.Interaction, &response)
