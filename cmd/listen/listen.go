@@ -13,11 +13,12 @@ import (
 )
 
 type Config struct {
-	DiscordToken string
-	RadarrURL    string
-	RadarrKey    string
-	JackettURL   string
-	JackettKey   string
+	DiscordToken    string
+	RadarrURL       string
+	RadarrKey       string
+	JackettURL      string
+	JackettKey      string
+	RefreshCommands bool
 }
 
 func Run(args []string) {
@@ -28,6 +29,7 @@ func Run(args []string) {
 	flags.StringVar(&c.DiscordToken, "token", "", "token for the discord bot")
 	flags.StringVar(&c.RadarrURL, "radarURL", "http://localhost:7878/api/v3", "url of radar service")
 	flags.StringVar(&c.RadarrKey, "radarrKey", "", "radarr api key")
+	flags.BoolVar(&c.RefreshCommands, "refresh", false, "delete lingering commands, and re-add them")
 
 	err := flags.Parse(args)
 	if err != nil {
@@ -54,7 +56,7 @@ func Run(args []string) {
 		log.Printf("failed to get got: %v", err)
 		return
 	}
-	err = s.Init(ctx)
+	err = s.Init(ctx, c.RefreshCommands)
 	if err != nil {
 		log.Println(err)
 	}
