@@ -3,20 +3,18 @@ package discord
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
 )
 
-func (d *Discord) Search(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) {
+func (d *Discord) Search(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) error {
 
 	//ctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	query := i.ApplicationCommandData().Options[0].StringValue()
 	movies, err := d.service.Search(ctx, query)
 	if err != nil {
-		log.Println(err)
-		return
+		return err
 	}
 
 	b := strings.Builder{}
@@ -31,6 +29,7 @@ func (d *Discord) Search(ctx context.Context, s *discordgo.Session, i *discordgo
 	}
 	err = s.InteractionRespond(i.Interaction, &response)
 	if err != nil {
-		log.Println(err)
+		return err
 	}
+	return nil
 }

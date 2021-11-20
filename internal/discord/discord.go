@@ -12,6 +12,20 @@ import (
 var (
 	commands = []*discordgo.ApplicationCommand{
 		{
+			Name:        "add",
+			Description: "add a movie or a show",
+			Type:        discordgo.ChatApplicationCommand,
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:         discordgo.ApplicationCommandOptionString,
+					Name:         "title",
+					Description:  "title of movie you want to find",
+					Required:     true,
+					Autocomplete: true,
+				},
+			},
+		},
+		{
 			Name:        "search",
 			Description: "search for a movie or show",
 			Type:        discordgo.ChatApplicationCommand,
@@ -28,8 +42,6 @@ var (
 			Name:        "ping",
 			Description: "ping the bot",
 			Type:        discordgo.ChatApplicationCommand,
-			// TODO: auto suggestions
-			//Options:     []*discordgo.ApplicationCommand{},
 		},
 	}
 )
@@ -64,7 +76,8 @@ func (d *Discord) Close() {
 }
 
 // Init starts the discord service and adds handlers.
-func (d *Discord) Init(ctx context.Context) error {
+// if refresh is true we will delete all the old commands and re-add them.
+func (d *Discord) Init(ctx context.Context, refresh bool) error {
 
 	d.session.AddHandler(d.HandleInteraction)
 	d.session.AddHandler(d.Connected)
@@ -74,16 +87,17 @@ func (d *Discord) Init(ctx context.Context) error {
 		return fmt.Errorf("failed to open discord ws: %w", err)
 	}
 
-	existing, err := d.session.ApplicationCommands(d.session.State.User.ID, "")
-	if err != nil {
-		return fmt.Errorf("failed to get existing commands: %w", err)
-	}
-
-	log.Printf("cleaning old commands")
-	for _, e := range existing {
-		err := d.session.ApplicationCommandDelete(d.session.State.User.ID, "", e.ID)
+	if refresh {
+		existing, err := d.session.ApplicationCommands(d.session.State.User.ID, "")
 		if err != nil {
-			return fmt.Errorf("failed to delete command %v: %w", e, err)
+			return fmt.Errorf("failed to get existing commands: %w", err)
+		}
+		log.Printf("cleaning old commands")
+		for _, e := range existing {
+			err := d.session.ApplicationCommandDelete(d.session.State.User.ID, "", e.ID)
+			if err != nil {
+				return fmt.Errorf("failed to delete command %v: %w", e, err)
+			}
 		}
 	}
 
@@ -104,14 +118,23 @@ func (d *Discord) Connected(s *discordgo.Session, r *discordgo.Ready) {
 
 func (d *Discord) HandleInteraction(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
-	ctx := context.TODO()
+	ctx := context.Background()
 	name := i.ApplicationCommandData().Name
 	log.Printf("received command: %s\n", name)
 	switch name {
-	case commands[0].Name:
-		d.Search(ctx, s, i)
+	case "add":
+		err := d.Add(ctx, s, i)
+		if err != nil {
+			log.Println(err)
+		}
 		return
-	case commands[1].Name:
+	case "search":
+		err := d.Search(ctx, s, i)
+		if err != nil {
+			log.Println(err)
+		}
+		return
+	case "ping":
 		d.Ping(s, i)
 		return
 	default:
