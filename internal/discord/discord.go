@@ -30,36 +30,41 @@ var (
 // Discord is a service struct for handling discord commands
 type Discord struct {
 	token   string
+	session *discordgo.Session
 	service *service.Service
 }
 
-func NewSession(token string, svc *service.Service) Discord {
+func NewSession(token string, svc *service.Service) (Discord, error) {
+
+	discord, err := discordgo.New("Bot " + token)
+	if err != nil {
+		return Discord{}, err
+	}
+
+	err = discord.Open()
+	if err != nil {
+		return Discord{}, err
+	}
+
 	return Discord{
 		token:   token,
+		session: discord,
 		service: svc,
-	}
+	}, nil
+}
+
+func (d *Discord) Close() {
+	d.session.Close()
 }
 
 // Init starts the discord service and adds handlers
 func (d *Discord) Init(ctx context.Context) {
 
-	discord, err := discordgo.New("Bot " + d.token)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	discord.AddHandler(d.HandleInteraction)
-	discord.AddHandler(d.Connected)
-	err = discord.Open()
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	defer discord.Close()
+	d.session.AddHandler(d.HandleInteraction)
+	d.session.AddHandler(d.Connected)
 
 	for _, v := range commands {
-		_, err := discord.ApplicationCommandCreate(discord.State.User.ID, "", v)
+		_, err := d.session.ApplicationCommandCreate(d.session.State.User.ID, "", v)
 		if err != nil {
 			log.Printf("failed to register command: %v: err: %v \n", v, err)
 		}

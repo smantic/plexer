@@ -3,12 +3,14 @@ package radarr
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
 type Client struct {
 	BaseURL string
-	http    http.Client
+	Apikey  string
+	Http    http.Client
 }
 
 type Image struct {
@@ -54,15 +56,34 @@ type Movie struct {
 	Status              string   `json:"status"`
 }
 
+func (c *Client) AddMovie(ctx context.Context, m *Movie) error {
+	url := fmt.Sprintf("%s/movie/lookup?apiKey=%s", c.BaseURL, c.Apikey)
+
+	r, err := http.NewRequestWithContext(ctx, http.MethodPost, url, nil)
+	if err != nil {
+		return err
+	}
+	response, err := c.Http.Do(r)
+	if err != nil {
+		return err
+	}
+
+	if response.StatusCode != http.StatusOK {
+		return fmt.Errorf("non 200 response")
+	}
+
+	return nil
+}
+
 func (c *Client) Search(ctx context.Context, query string) ([]Movie, error) {
 
 	result := []Movie{}
-	url := c.BaseURL + "/movie/lookup?term=" + query
+	url := fmt.Sprintf("%s/movie/lookup?term=%s&apiKey=%s", c.BaseURL, query, c.Apikey)
 	r, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return result, err
 	}
-	response, err := c.http.Do(r)
+	response, err := c.Http.Do(r)
 	if err != nil {
 		return result, err
 	}

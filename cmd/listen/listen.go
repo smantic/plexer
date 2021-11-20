@@ -10,38 +10,59 @@ import (
 	"github.com/smantic/plexer/internal/discord"
 	"github.com/smantic/plexer/internal/service"
 	"github.com/smantic/plexer/pkg/radarr"
+	"github.com/webtor-io/go-jackett"
 )
 
-func Run(args []string) {
-	flags := flag.NewFlagSet("", flag.ExitOnError)
-	token := flags.String("token", "", "token for the discord bot")
-	radarURL := flags.String("radarURL", "https://localhost:7878/api/v3", "url of radar service")
-	flags.Parse(args)
-	_ = radarURL
+type Config struct {
+	DiscordToken string
+	RadarrURL    string
+	RadarrKey    string
+	JackettURL   string
+	JackettKey   string
+}
 
-	if token == nil || *token == "" {
+func Run(args []string) {
+
+	c := Config{}
+
+	flags := flag.NewFlagSet("", flag.ExitOnError)
+	flags.StringVar(&c.DiscordToken, "token", "", "token for the discord bot")
+	flags.StringVar(&c.RadarrURL, "radarURL", "https://localhost:7878/api/v3", "url of radar service")
+	flags.StringVar(&c.RadarrKey, "radarrKey", "", "radarr api key")
+	flags.StringVar(&c.JackettURL, "jackett", "", "url of jacket service")
+	flags.StringVar(&c.JackettKey, "jackettKey", "", "jackett api key")
+
+	flags.Parse(args)
+
+	if c.DiscordToken == "" {
 		log.Println("expected non empty bot token")
 		return
 	}
 
-	ctx := context.Background()
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 
-	radarr := radarr.Client{}
-
-	deps := service.Dependencies{
-		Radarr: &radarr,
+	svc := service.Service{
+		Radarr: &radarr.Client{
+			BaseURL: c.RadarrURL,
+			Apikey:  c.RadarrKey,
+		},
+		Jackett: jackett.NewJackett(&jackett.Settings{
+			ApiURL: c.JackettURL,
+			ApiKey: c.JackettKey,
+		}),
 	}
-	svc, err := service.NewService(&deps)
+
+	s, err := discord.NewSession(c.DiscordToken, &svc)
 	if err != nil {
-		log.Println(err)
+		log.Printf("failed to get bot: %w", err)
 		return
 	}
+	s.Init(ctx)
 
-	d := discord.NewSession(*token, &svc)
-	d.Init(ctx)
-
-	stop := make(chan os.Signal)
-	signal.Notify(stop, os.Interrupt)
-	<-stop
+	<-ctx.Done()
 	log.Println("shutting down...")
+
+	s.Close()
+
+	cancel()
 }
