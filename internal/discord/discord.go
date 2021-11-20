@@ -80,7 +80,7 @@ func (d *Discord) Close() {
 // if refresh is true we will delete all the old commands and re-add them.
 func (d *Discord) Init(ctx context.Context, refresh bool) error {
 
-	d.session.AddHandler(d.HandleInteraction)
+	d.session.AddHandler(d.HandleInteraction(ctx))
 	d.session.AddHandler(d.Connected)
 
 	err := d.session.Open()
@@ -117,30 +117,33 @@ func (d *Discord) Connected(s *discordgo.Session, r *discordgo.Ready) {
 	log.Printf("connected to: %s\n", r.User.String())
 }
 
-func (d *Discord) HandleInteraction(s *discordgo.Session, i *discordgo.InteractionCreate) {
+type interactionHandler = func(s *discordgo.Session, i *discordgo.InteractionCreate)
 
-	ctx := context.Background()
-	name := i.ApplicationCommandData().Name
-	log.Printf("received command: %s\n", name)
-	switch name {
-	case "add":
-		err := d.Add(ctx, s, i)
-		if err != nil {
-			log.Println(err)
+func (d *Discord) HandleInteraction(ctx context.Context) interactionHandler {
+
+	return func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		name := i.ApplicationCommandData().Name
+		log.Printf("received command: %s\n", name)
+		switch name {
+		case "add":
+			err := d.Add(ctx, s, i)
+			if err != nil {
+				log.Println(err)
+			}
+			return
+		case "search":
+			err := d.Search(ctx, s, i)
+			if err != nil {
+				log.Println(err)
+			}
+			return
+		case "ping":
+			d.Ping(s, i)
+			return
+		default:
+			log.Printf("didn't recognize command: %s\n", name)
+			return
 		}
-		return
-	case "search":
-		err := d.Search(ctx, s, i)
-		if err != nil {
-			log.Println(err)
-		}
-		return
-	case "ping":
-		d.Ping(s, i)
-		return
-	default:
-		log.Printf("didn't recognize command: %s\n", name)
-		return
 	}
 }
 
