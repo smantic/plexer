@@ -64,8 +64,6 @@ func Run(args []string) {
 
 	<-ctx.Done()
 	log.Println("shutting down...")
-
-	//s.Close()
-
+	s.Close()
 	cancel()
 }
