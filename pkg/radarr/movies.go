@@ -1,16 +1,22 @@
 package radarr
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"net/url"
 )
 
 type Client struct {
 	BaseURL string
 	Apikey  string
 	Http    http.Client
+
+	// Debug will print response body
+	Debug bool
 }
 
 type Image struct {
@@ -44,33 +50,58 @@ type Movie struct {
 	Monitored           bool     `json:"monitored"`
 	MinimumAvailability string   `json:"minimumAvailability"`
 	IsAvailable         bool     `json:"isAvailable"`
-	FolderName          string   `json:"folderName"`
 	Runtime             int      `json:"runtime"`
 	CleanTitle          string   `json:"cleanTitle"`
 	ImdbID              string   `json:"imdbId"`
+	TmdbID              int      `json:"tmdbid"`
 	TitleSlug           string   `json:"titleSlug"`
 	Certification       string   `json:"certification"`
 	Genres              []string `json:"genres"`
 	Tags                []int    `json:"tags"`
 	Added               string   `json:"added"`
 	Status              string   `json:"status"`
+
+	Path             string `json:"path"`
+	RootFolderPath   string `json:"rootFolderPath"`
+	QualityProfileId int    `json:"qualityFolderId"`
+	FolderName       string `json:"folderName"`
 }
 
 func (c *Client) AddMovie(ctx context.Context, m *Movie) error {
-	url := fmt.Sprintf("%s/movie/lookup?apiKey=%s", c.BaseURL, c.Apikey)
+	if m == nil {
+		return nil
+	}
+	m.Id = 0
 
-	r, err := http.NewRequestWithContext(ctx, http.MethodPost, url, nil)
+	url := fmt.Sprintf("%s/movie", c.BaseURL)
+	body, err := json.Marshal(m)
 	if err != nil {
 		return err
 	}
+
+	if c.Debug {
+		fmt.Printf("request: %#v\n", m)
+	}
+
+	r, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(body))
+	if err != nil {
+		return err
+	}
+	r.Header.Add("Content-Type", "application/json")
+	r.Header.Add("X-Api-key", c.Apikey)
+
 	response, err := c.Http.Do(r)
 	if err != nil {
 		return err
 	}
-	response.Body.Close()
+	defer response.Body.Close()
 
 	if response.StatusCode != http.StatusOK {
-		return fmt.Errorf("non 200 response")
+		if c.Debug {
+			bytes, _ := ioutil.ReadAll(response.Body)
+			fmt.Printf("response: %s\n", string(bytes))
+		}
+		return fmt.Errorf("recieved %d from radarr", response.StatusCode)
 	}
 
 	return nil
@@ -79,11 +110,16 @@ func (c *Client) AddMovie(ctx context.Context, m *Movie) error {
 func (c *Client) Search(ctx context.Context, query string) ([]Movie, error) {
 
 	result := []Movie{}
-	url := fmt.Sprintf("%s/movie/lookup?term=%s&apiKey=%s", c.BaseURL, query, c.Apikey)
+	q := url.QueryEscape(query)
+	url := fmt.Sprintf("%s/movie/lookup?term='%s'", c.BaseURL, q)
+
 	r, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return result, err
 	}
+
+	r.Header.Add("Accept", "application/json")
+	r.Header.Add("X-Api-key", c.Apikey)
 	response, err := c.Http.Do(r)
 	if err != nil {
 		return result, err
