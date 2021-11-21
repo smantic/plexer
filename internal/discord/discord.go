@@ -91,7 +91,9 @@ func (d *Discord) Init(ctx context.Context, refresh bool, skip bool) error {
 	return nil
 }
 
-func (d *Discord) Connected(ctx context.Context, refresh bool, skip bool) func(s *discordgo.Session, r *discordgo.Ready) {
+type readyHandler = func(s *discordgo.Session, r *discordgo.Ready)
+
+func (d *Discord) Connected(ctx context.Context, refresh bool, skip bool) readyHandler {
 
 	return func(s *discordgo.Session, r *discordgo.Ready) {
 		log.Printf("connected to: %s\n", r.User.String())
@@ -113,7 +115,7 @@ func (d *Discord) Connected(ctx context.Context, refresh bool, skip bool) func(s
 
 				err := d.session.ApplicationCommandDelete(d.session.State.User.ID, "", e.ID)
 				if err != nil {
-					log.Printf("failed to delete command %v: %w", e, err)
+					log.Printf("failed to delete command %v: %v", e, err)
 					return
 				}
 			}
