@@ -78,46 +78,60 @@ func (d *Discord) Close() {
 
 // Init starts the discord service and adds handlers.
 // if refresh is true we will delete all the old commands and re-add them.
-func (d *Discord) Init(ctx context.Context, refresh bool) error {
+func (d *Discord) Init(ctx context.Context, refresh bool, skip bool) error {
 
 	d.session.AddHandler(d.HandleInteraction(ctx))
-	d.session.AddHandler(d.Connected)
+	d.session.AddHandler(d.Connected(ctx, refresh, skip))
 
 	err := d.session.Open()
 	if err != nil {
 		return fmt.Errorf("failed to open discord ws: %w", err)
 	}
 
-	if refresh {
-		existing, err := d.session.ApplicationCommands(d.session.State.User.ID, "")
-		if err != nil {
-			return fmt.Errorf("failed to get existing commands: %w", err)
-		}
-		log.Printf("cleaning old commands")
-		for _, e := range existing {
-			if e.ApplicationID != d.session.State.User.ID {
-				continue
-			}
-			err := d.session.ApplicationCommandDelete(d.session.State.User.ID, "", e.ID)
+	return nil
+}
+
+func (d *Discord) Connected(ctx context.Context, refresh bool, skip bool) func(s *discordgo.Session, r *discordgo.Ready) {
+
+	return func(s *discordgo.Session, r *discordgo.Ready) {
+		log.Printf("connected to: %s\n", r.User.String())
+
+		if refresh {
+			// if refresh then delete all of bot's existing commands
+
+			existing, err := d.session.ApplicationCommands(d.session.State.User.ID, "")
 			if err != nil {
-				return fmt.Errorf("failed to delete command %v: %w", e, err)
+				log.Printf("failed to get existing commands: %v", err)
+				return
 			}
+
+			log.Printf("cleaning old commands")
+			for _, e := range existing {
+				if e.ApplicationID != d.session.State.User.ID {
+					continue
+				}
+
+				err := d.session.ApplicationCommandDelete(d.session.State.User.ID, "", e.ID)
+				if err != nil {
+					log.Printf("failed to delete command %v: %w", e, err)
+					return
+				}
+			}
+		}
+
+		if skip {
+			return
 		}
 
 		for _, v := range commands {
 			_, err := d.session.ApplicationCommandCreate(d.session.State.User.ID, "", v)
 			if err != nil {
-				return fmt.Errorf("failed to register command: %v: err: %w \n", v, err)
+				log.Printf("failed to register command: %v: err: %v \n", v, err)
+				continue
 			}
 			log.Printf("registered: %s\n", v.Name)
 		}
 	}
-
-	return nil
-}
-
-func (d *Discord) Connected(s *discordgo.Session, r *discordgo.Ready) {
-	log.Printf("connected to: %s\n", r.User.String())
 }
 
 type interactionHandler = func(s *discordgo.Session, i *discordgo.InteractionCreate)

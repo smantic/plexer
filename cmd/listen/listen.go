@@ -19,6 +19,7 @@ type Config struct {
 	JackettURL      string
 	JackettKey      string
 	RefreshCommands bool
+	SkipRegrister   bool
 
 	// Debug will print response bodies to stdout
 	Debug bool
@@ -34,6 +35,7 @@ func Run(args []string) {
 	flags.StringVar(&c.RadarrKey, "radarrKey", "", "radarr api key")
 	flags.BoolVar(&c.RefreshCommands, "refresh", false, "delete lingering commands, and re-add them")
 	flags.BoolVar(&c.Debug, "debug", false, "print out response bodies")
+	flags.BoolVar(&c.SkipRegrister, "skipRegister", false, "skip regerstering commands for faster bot startup")
 
 	err := flags.Parse(args)
 	if err != nil {
@@ -61,7 +63,7 @@ func Run(args []string) {
 		log.Printf("failed to get got: %v", err)
 		return
 	}
-	err = s.Init(ctx, c.RefreshCommands)
+	err = s.Init(ctx, c.RefreshCommands, c.SkipRegrister)
 	if err != nil {
 		log.Println(err)
 	}
