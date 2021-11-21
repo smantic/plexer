@@ -100,14 +100,14 @@ func (d *Discord) Init(ctx context.Context, refresh bool) error {
 				return fmt.Errorf("failed to delete command %v: %w", e, err)
 			}
 		}
-	}
 
-	for _, v := range commands {
-		_, err := d.session.ApplicationCommandCreate(d.session.State.User.ID, "", v)
-		if err != nil {
-			return fmt.Errorf("failed to register command: %v: err: %w \n", v, err)
+		for _, v := range commands {
+			_, err := d.session.ApplicationCommandCreate(d.session.State.User.ID, "", v)
+			if err != nil {
+				return fmt.Errorf("failed to register command: %v: err: %w \n", v, err)
+			}
+			log.Printf("registered: %s\n", v.Name)
 		}
-		log.Printf("registered: %s\n", v.Name)
 	}
 
 	return nil
@@ -123,7 +123,6 @@ func (d *Discord) HandleInteraction(ctx context.Context) interactionHandler {
 
 	return func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		name := i.ApplicationCommandData().Name
-		log.Printf("received command: %s\n", name)
 		switch name {
 		case "add":
 			err := d.Add(ctx, s, i)

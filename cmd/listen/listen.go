@@ -19,6 +19,9 @@ type Config struct {
 	JackettURL      string
 	JackettKey      string
 	RefreshCommands bool
+
+	// Debug will print response bodies to stdout
+	Debug bool
 }
 
 func Run(args []string) {
@@ -30,6 +33,7 @@ func Run(args []string) {
 	flags.StringVar(&c.RadarrURL, "radarURL", "http://localhost:7878/api/v3", "url of radar service")
 	flags.StringVar(&c.RadarrKey, "radarrKey", "", "radarr api key")
 	flags.BoolVar(&c.RefreshCommands, "refresh", false, "delete lingering commands, and re-add them")
+	flags.BoolVar(&c.Debug, "debug", false, "print out response bodies")
 
 	err := flags.Parse(args)
 	if err != nil {
@@ -48,6 +52,7 @@ func Run(args []string) {
 		Radarr: &radarr.Client{
 			BaseURL: c.RadarrURL,
 			Apikey:  c.RadarrKey,
+			Debug:   c.Debug,
 		},
 	}
 

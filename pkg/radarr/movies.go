@@ -63,7 +63,7 @@ type Movie struct {
 
 	Path             string `json:"path"`
 	RootFolderPath   string `json:"rootFolderPath"`
-	QualityProfileId int    `json:"qualityFolderId"`
+	QualityProfileId int    `json:"qualityProfileId"`
 	FolderName       string `json:"folderName"`
 }
 
