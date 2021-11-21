@@ -3,10 +3,29 @@ package discord
 import (
 	"context"
 	"fmt"
+	"log"
+	"strings"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/smantic/plexer/pkg/radarr"
 )
+
+// getRadarrRootFolder gets radarr's download path
+func (d *Discord) getRadarrRootFolder(ctx context.Context) <-chan radarr.RootFolderInfo {
+
+	c := make(chan radarr.RootFolderInfo)
+
+	go func() {
+		infos, err := d.service.Radarr.GetRootFolder(ctx)
+		if err != nil || len(infos) == 0 {
+			log.Printf("failed to get radarr root folder!! %v", err)
+		}
+		c <- infos[0]
+		close(c)
+	}()
+
+	return c
+}
 
 func (d *Discord) Add(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) error {
 
@@ -20,36 +39,48 @@ func (d *Discord) Add(ctx context.Context, s *discordgo.Session, i *discordgo.In
 	switch i.Type {
 	case discordgo.InteractionApplicationCommand:
 
-		title := i.ApplicationCommandData().Options[0].StringValue()
+		rootFolderInfo := d.getRadarrRootFolder(ctx)
 
-		results, err := d.service.Search(ctx, title)
+		title := i.ApplicationCommandData().Options[0].StringValue()
+		title = strings.TrimSpace(title)
+
+		movies, err := d.service.Search(ctx, title)
 		if err != nil {
 			return fmt.Errorf("failed to search for movie to add: %w", err)
 		}
 
-		if len(results) == 0 {
-			data := discordgo.InteractionResponseData{
-				Content: "couldn't find a movie to add like: " + title,
-			}
-			response = discordgo.InteractionResponse{
-				Type: discordgo.InteractionResponseChannelMessageWithSource,
-				Data: &data,
-			}
+		if len(movies) == 0 {
+			response.Data.Content = "couldn't find a movie to add like: " + title
 			break
 		}
 
-		movie := results[0]
-		if movie.Added != "" {
+		var m radarr.Movie
+		for _, movie := range movies {
+			if movie.Title == title {
+				m = movie
+				break
+			}
+		}
+
+		if len(m.Path) > 0 {
 			response.Data.Content = title + " is already added! "
 			break
 		}
 
-		err = d.service.Add(ctx, results[0])
+		info := <-rootFolderInfo
+		m.RootFolderPath = info.Path
+
+		if int(info.FreeSpace) < m.SizeOnDisk {
+			response.Data.Content = fmt.Sprintf("not enough space on disk!! only %d space left", info.FreeSpace)
+			break
+		}
+
+		err = d.service.Add(ctx, m)
 		if err != nil {
 			return fmt.Errorf("failed to add title: %w", err)
 		}
 
-		response.Data.Content = title
+		response.Data.Content = "added: " + title
 
 	case discordgo.InteractionApplicationCommandAutocomplete:
 		query := i.ApplicationCommandData().Options[0].StringValue()
@@ -59,6 +90,7 @@ func (d *Discord) Add(ctx context.Context, s *discordgo.Session, i *discordgo.In
 		}
 
 		choices := getAutoCompleteChoicesFrom(results)
+		response.Type = discordgo.InteractionApplicationCommandAutocompleteResult
 		response.Data = &discordgo.InteractionResponseData{
 			Choices: choices,
 		}

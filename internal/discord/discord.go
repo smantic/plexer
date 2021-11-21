@@ -52,6 +52,9 @@ type Discord struct {
 	token   string
 	session *discordgo.Session
 	service *service.Service
+
+	// rootfolder of radarr downloads
+	radarrRootURL string
 }
 
 // NewSession creates a new session.
@@ -95,6 +98,9 @@ func (d *Discord) Init(ctx context.Context, refresh bool) error {
 		}
 		log.Printf("cleaning old commands")
 		for _, e := range existing {
+			if e.ApplicationID != d.session.State.User.ID {
+				continue
+			}
 			err := d.session.ApplicationCommandDelete(d.session.State.User.ID, "", e.ID)
 			if err != nil {
 				return fmt.Errorf("failed to delete command %v: %w", e, err)

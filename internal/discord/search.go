@@ -30,6 +30,7 @@ func (d *Discord) Search(ctx context.Context, s *discordgo.Session, i *discordgo
 		for _, movie := range movies {
 			if movie.Title == query {
 				m = movie
+				break
 			}
 		}
 

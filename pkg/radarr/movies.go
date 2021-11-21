@@ -96,12 +96,14 @@ func (c *Client) AddMovie(ctx context.Context, m *Movie) error {
 	}
 	defer response.Body.Close()
 
-	if response.StatusCode != http.StatusOK {
+	switch response.StatusCode {
+	case http.StatusOK, http.StatusCreated:
+	default:
 		if c.Debug {
 			bytes, _ := ioutil.ReadAll(response.Body)
 			fmt.Printf("response: %s\n", string(bytes))
 		}
-		return fmt.Errorf("recieved %d from radarr", response.StatusCode)
+		return fmt.Errorf("received %d from radarr", response.StatusCode)
 	}
 
 	return nil
