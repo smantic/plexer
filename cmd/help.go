@@ -10,7 +10,6 @@ var CommandStr string = `Commands:
 
 var FlagStr string = `Flags:
   -h --help | show this help message
-  -token    | token to use for the bot
 `
 
 var UsageStr string = `plexer - discord bot to download things to your plex server 
