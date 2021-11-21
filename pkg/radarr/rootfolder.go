@@ -17,7 +17,7 @@ type RootFolderInfo struct {
 	Id              int           `json:"id"`
 }
 
-// GetRootFolder gets radarr's root folder
+// GetRootFolder gets radarr's root folder.
 func (c *Client) GetRootFolder(ctx context.Context) ([]RootFolderInfo, error) {
 
 	result := []RootFolderInfo{}

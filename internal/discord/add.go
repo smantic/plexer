@@ -10,7 +10,7 @@ import (
 	"github.com/smantic/plexer/pkg/radarr"
 )
 
-// getRadarrRootFolder gets radarr's download path
+// getRadarrRootFolder gets radarr's download path.
 func (d *Discord) getRadarrRootFolder(ctx context.Context) <-chan radarr.RootFolderInfo {
 
 	c := make(chan radarr.RootFolderInfo)

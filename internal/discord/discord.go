@@ -52,9 +52,6 @@ type Discord struct {
 	token   string
 	session *discordgo.Session
 	service *service.Service
-
-	// rootfolder of radarr downloads
-	radarrRootURL string
 }
 
 // NewSession creates a new session.
