@@ -21,6 +21,7 @@ jobs:
           images: ghcr.io/smantic/plexer
           flavor: |
             latest=true
+          tags: |
             type=semver,pattern={{major}}.{{minor}}
       
       - name: Set up QEMU
