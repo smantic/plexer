@@ -19,9 +19,8 @@ jobs:
         uses: crazy-max/ghaction-docker-meta@v1
         with:
           images: ghcr.io/smantic/plexer
-          tag-sha: true
-          tag-edge: false
-          tag-latest: true
+          flavor: |
+            latest=auto
       
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
