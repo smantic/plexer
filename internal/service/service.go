@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"log"
 
 	"github.com/smantic/plexer/pkg/radarr"
 )
@@ -12,6 +13,7 @@ type Service struct {
 
 func (s *Service) Add(ctx context.Context, m radarr.Movie) error {
 
+	m.Monitored = true // automatic monitoring
 	if m.QualityProfileId == 0 {
 		m.QualityProfileId = 1
 	}
@@ -20,6 +22,19 @@ func (s *Service) Add(ctx context.Context, m radarr.Movie) error {
 	if err != nil {
 		return err
 	}
+
+	go func() {
+		// tell radarr to search for the newly added title
+		r := radarr.CommandPayload{
+			Name: radarr.CommandMissingMoviesSearch,
+		}
+		err := s.Radarr.PostCommand(ctx, r)
+
+		if err != nil {
+			log.Printf("failed to tell radar to search for missing movies: %v\n", err)
+			return
+		}
+	}()
 
 	return nil
 }
