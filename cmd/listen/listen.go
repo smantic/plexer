@@ -49,7 +49,6 @@ func Run(args []string) {
 	}
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
-
 	svc := service.Service{
 		Radarr: &radarr.Client{
 			BaseURL: c.RadarrURL,

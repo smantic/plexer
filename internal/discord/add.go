@@ -29,6 +29,7 @@ func (d *Discord) getRadarrRootFolder(ctx context.Context) <-chan radarr.RootFol
 
 func (d *Discord) Add(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) error {
 
+	// start with a hidden resposne
 	var response discordgo.InteractionResponse = discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{

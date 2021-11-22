@@ -12,15 +12,21 @@ import (
 
 func (d *Discord) Search(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) error {
 
-	var response discordgo.InteractionResponse
+	// start with a hidden resposne
+	var response discordgo.InteractionResponse = discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Flags: 1 << 6,
+		},
+	}
 
 	switch i.Type {
 	case discordgo.InteractionApplicationCommand:
 
 		query := i.ApplicationCommandData().Options[0].StringValue()
 		query = strings.TrimSpace(query)
+		data := response.Data
 
-		data := discordgo.InteractionResponseData{Flags: 1 << 6}
 		movies, err := d.service.Search(ctx, query)
 		if err != nil {
 			return err
@@ -30,13 +36,11 @@ func (d *Discord) Search(ctx context.Context, s *discordgo.Session, i *discordgo
 		for _, movie := range movies {
 			if movie.Title == query {
 				m = movie
-				break
 			}
 		}
 
 		if m.Title == "" {
 			data.Content = "could not find " + query
-			break
 		}
 
 		data.Embeds = []*discordgo.MessageEmbed{
@@ -54,9 +58,9 @@ func (d *Discord) Search(ctx context.Context, s *discordgo.Session, i *discordgo
 						Value:  m.Added,
 						Inline: true,
 					},
+
 					{
 						Name:   "Genre",
-						Value:  m.Genres[0],
 						Inline: true,
 					},
 					{
@@ -77,6 +81,10 @@ func (d *Discord) Search(ctx context.Context, s *discordgo.Session, i *discordgo
 			},
 		}
 
+		if len(m.Genres) > 0 {
+			data.Embeds[0].Fields[2].Value = m.Genres[0]
+		}
+
 		if len(m.Images) > 0 {
 			image := m.Images[0]
 			data.Embeds = append(data.Embeds, &discordgo.MessageEmbed{
@@ -88,11 +96,6 @@ func (d *Discord) Search(ctx context.Context, s *discordgo.Session, i *discordgo
 				Description: "",
 			})
 		}
-
-		response = discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &data,
-		}
 	case discordgo.InteractionApplicationCommandAutocomplete:
 
 		query := i.ApplicationCommandData().Options[0].StringValue()
@@ -101,13 +104,10 @@ func (d *Discord) Search(ctx context.Context, s *discordgo.Session, i *discordgo
 			return fmt.Errorf("failed to search for auto completes: %w", err)
 		}
 
-		response = discordgo.InteractionResponse{
-			Type: discordgo.InteractionApplicationCommandAutocompleteResult,
-			Data: &discordgo.InteractionResponseData{
-				Choices: getAutoCompleteChoicesFrom(results),
-			},
+		response.Type = discordgo.InteractionApplicationCommandAutocompleteResult
+		response.Data = &discordgo.InteractionResponseData{
+			Choices: getAutoCompleteChoicesFrom(results),
 		}
 	}
-
 	return s.InteractionRespond(i.Interaction, &response)
 }
