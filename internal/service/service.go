@@ -15,7 +15,7 @@ func (s *Service) Add(ctx context.Context, m radarr.Movie) error {
 
 	m.Monitored = true // automatic monitoring
 	if m.QualityProfileId == 0 {
-		m.QualityProfileId = 1
+		m.QualityProfileId = 6
 	}
 
 	err := s.Radarr.AddMovie(ctx, &m)
