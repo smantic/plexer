@@ -20,7 +20,8 @@ jobs:
         with:
           images: ghcr.io/smantic/plexer
           flavor: |
-            latest=auto
+            latest=true
+            type=semver,pattern={{major}}.{{minor}}
       
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
