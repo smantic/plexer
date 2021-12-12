@@ -31,12 +31,9 @@ func (c *Client) DiskSpace(ctx context.Context) ([]DiskSpace, error) {
 		return result, err
 	}
 
-	r.Header.Add("Accept", "application/json")
-	r.Header.Add("X-Api-key", c.Apikey)
-
-	response, err := c.Http.Do(r)
+	response, err := c.Do(r)
 	if err != nil {
-		return result, err
+		return nil, err
 	}
 	defer response.Body.Close()
 

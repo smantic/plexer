@@ -12,27 +12,27 @@ import (
 type Command string
 
 const (
-	//Trigger an update of Radarr
+	//Trigger an update of Radarr.
 	CommandApplicationUpdate Command = "ApplicationUpdate"
-	//Trigger a backup routine
+	//Trigger a backup routine.
 	CommandBackup Command = "Backup"
-	//Trigger a system health check
+	//Trigger a system health check.
 	CommandCheckHealth Command = "CheckHealth"
-	// Triggers the removal of all blocklisted movies
+	// Triggers the removal of all blocklisted movies.
 	CommandClearBlocklist Command = "ClearBlocklist"
-	// Trigger a recycle bin cleanup check
+	// Trigger a recycle bin cleanup check.
 	CommandCleanUpRecycleBin Command = "CleanUprecycleBin"
-	// Triggers the removal of all Info/Debug/Trace log files
+	// Triggers the removal of all Info/Debug/Trace log files.
 	CommandDeleteLogFiles Command = "DeleteLogFiles"
-	// Triggers the removal of all Update log files
+	// Triggers the removal of all Update log files.
 	CommandDeleteUpdateLogFiles Command = "DeleteUpdateLogFiles"
-	// Triggers the scan of downloaded movies
+	// Triggers the scan of downloaded movies.
 	CommandDownloadedMoviesScan Command = "DownloadMovieScan"
-	// Triggers a search of all missing movies
+	// Triggers a search of all missing movies.
 	CommandMissingMoviesSearch Command = "MissingMoviesSearch"
-	// Triggers the scan of monitored downloads
+	// Triggers the scan of monitored downloads.
 	CommandRefreshMonitoredDownloads Command = "RefreshMonitoredDownloads"
-	// Trigger a refresh / scan of library
+	// Trigger a refresh / scan of library.
 	CommandRefreshMovie Command = "RefreshMovie"
 )
 

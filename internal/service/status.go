@@ -2,11 +2,6 @@ package service
 
 import "context"
 
-type Status struct {
-	DiskSpace DiskSpaceResult
-	Queue     []QueueItem
-}
-
 type DiskSpaceResult struct {
 	// Total size of available disk space in bytes
 	TotalCapacity int
@@ -89,25 +84,4 @@ func (s *Service) GetQueue(ctx context.Context) <-chan QueuResult {
 	}()
 
 	return c
-}
-
-// Status creates a descriptive status of our services.
-func (s *Service) Status(ctx context.Context) (Status, error) {
-
-	diskSpaceChan := s.GetDiskSpaceInfo(ctx)
-	queueResultChan := s.GetQueue(ctx)
-
-	diskSpace := <-diskSpaceChan
-	queue := <-queueResultChan
-
-	if diskSpace.Err != nil {
-		return Status{}, diskSpace.Err
-	}
-	if queue.Err != nil {
-		return Status{}, queue.Err
-	}
-
-	return Status{
-		DiskSpace: diskSpace, Queue: queue.Queue,
-	}, nil
 }

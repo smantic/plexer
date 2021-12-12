@@ -27,12 +27,9 @@ func (c *Client) GetRootFolder(ctx context.Context) ([]RootFolderInfo, error) {
 		return result, err
 	}
 
-	r.Header.Add("Accept", "application/json")
-	r.Header.Add("X-Api-key", c.Apikey)
-
-	response, err := c.Http.Do(r)
+	response, err := c.Do(r)
 	if err != nil {
-		return result, err
+		return nil, err
 	}
 	defer response.Body.Close()
 

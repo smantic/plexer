@@ -10,15 +10,6 @@ import (
 	"net/url"
 )
 
-type Client struct {
-	BaseURL string
-	Apikey  string
-	Http    http.Client
-
-	// Debug will print response body
-	Debug bool
-}
-
 type Image struct {
 	CoverType string `json:"coverType"`
 	Url       string `json:"url"`
