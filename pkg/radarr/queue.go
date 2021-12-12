@@ -82,7 +82,7 @@ func (c *Client) QueueDetails(ctx context.Context) ([]QueueItemInfo, error) {
 
 	result := []QueueItemInfo{}
 
-	url := fmt.Sprintf("%s/", c.BaseURL)
+	url := fmt.Sprintf("%s/queue/details", c.BaseURL)
 	r, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return result, err

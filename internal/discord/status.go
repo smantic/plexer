@@ -59,6 +59,10 @@ func (d *Discord) Queue(ctx context.Context, s *discordgo.Session, i *discordgo.
 	}
 
 	data := response.Data
+	if len(queue.Queue) == 0 {
+		data.Content = "nothing in the queue!"
+	}
+
 	for _, i := range queue.Queue {
 		data.Embeds = append(data.Embeds, queueItemAsEmbed(i))
 	}
