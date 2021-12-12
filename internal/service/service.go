@@ -7,6 +7,11 @@ import (
 	"github.com/smantic/plexer/pkg/radarr"
 )
 
+const (
+	CONTENT_MOVIE string = "movie"
+	CONTENT_SHOW  string = "show"
+)
+
 type Service struct {
 	Radarr *radarr.Client
 }

@@ -44,6 +44,16 @@ var (
 			Description: "ping the bot",
 			Type:        discordgo.ChatApplicationCommand,
 		},
+		{
+			Name:        "queue",
+			Description: "see downloads in the queue",
+			Type:        discordgo.ChatApplicationCommand,
+		},
+		{
+			Name:        "diskusage",
+			Description: "see disk usage",
+			Type:        discordgo.ChatApplicationCommand,
+		},
 	}
 )
 
@@ -142,25 +152,23 @@ func (d *Discord) HandleInteraction(ctx context.Context) interactionHandler {
 
 	return func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		name := i.ApplicationCommandData().Name
+		var err error
 		switch name {
 		case "add":
-			err := d.Add(ctx, s, i)
-			if err != nil {
-				log.Println(err)
-			}
-			return
+			err = d.Add(ctx, s, i)
 		case "search":
-			err := d.Search(ctx, s, i)
-			if err != nil {
-				log.Println(err)
-			}
-			return
+			err = d.Search(ctx, s, i)
+		case "diskusage":
+			err = d.DiskSpace(ctx, s, i)
+		case "queue":
+			err = d.Queue(ctx, s, i)
 		case "ping":
 			d.Ping(s, i)
-			return
 		default:
 			log.Printf("didn't recognize command: %s\n", name)
-			return
+		}
+		if err != nil {
+			log.Println(err)
 		}
 	}
 }
