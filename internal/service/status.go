@@ -2,23 +2,12 @@ package service
 
 import "context"
 
-type DiskSpaceResult struct {
-	// Total size of available disk space in bytes
-	TotalCapacity int
-	// UsedCapacity is the total amount of disk space in bytes used already
-	UsedCapacity int
+type FreeSpace struct {
 	// FreeSpace is the total amount of disk space in bytes left over
-	FreeSpace int
+	FreeSpace int64
 
 	// Paths contains all of the paths were we are storing content
 	Paths []string
-
-	Err error
-}
-
-type QueuResult struct {
-	Queue []QueueItem
-	Err   error
 }
 
 type QueueItem struct {
@@ -27,61 +16,70 @@ type QueueItem struct {
 	Size        int
 	Quality     int
 
-	Status                  string
-	TimeLeft                string
-	EstimatedCompletionTime string
+	Status   string
+	TimeLeft string
 
 	Indexer        string
 	DownloadClient string
 }
 
-func (s *Service) GetDiskSpaceInfo(ctx context.Context) <-chan DiskSpaceResult {
+func (s *Service) GetFreeSpace(ctx context.Context) (FreeSpace, error) {
 
-	c := make(chan DiskSpaceResult)
+	result := FreeSpace{}
+	folders, err := s.Radarr.GetRootFolders()
+	if err != nil {
+		return result, err
+	}
 
-	go func() {
-		disks, err := s.Radarr.DiskSpace(ctx)
-		result := DiskSpaceResult{Err: err}
+	for _, f := range folders {
+		result.FreeSpace += f.FreeSpace
+		result.Paths = append(result.Paths, f.Path)
+	}
 
-		for _, d := range disks {
-			result.FreeSpace += d.FreeSpace
-			result.TotalCapacity += d.TotalSpace
-			result.UsedCapacity = result.UsedCapacity + (d.TotalSpace - d.FreeSpace)
-			result.Paths = append(result.Paths, d.Path)
-		}
-		c <- result
-		close(c)
-	}()
-
-	return c
+	return result, nil
 }
 
-func (s *Service) GetQueue(ctx context.Context) <-chan QueuResult {
-	c := make(chan QueuResult)
+func (s *Service) GetQueue(ctx context.Context) ([]QueueItem, error) {
 
-	go func() {
-		details, err := s.Radarr.QueueDetails(ctx)
-		result := QueuResult{Err: err}
+	result := make([]QueueItem, 0, 20)
 
-		items := make([]QueueItem, 0, len(details))
-		for _, d := range details {
-			item := QueueItem{
-				ContentType:             CONTENT_MOVIE,
-				Title:                   d.Title,
-				Size:                    d.Size,
-				Quality:                 d.Quality.Quality.Resolution,
-				Status:                  d.Status,
-				TimeLeft:                d.TimeLeft,
-				EstimatedCompletionTime: d.EstimatedCompletedTime,
-				Indexer:                 d.Indexer,
-				DownloadClient:          d.DownloadClient,
-			}
-			items = append(items, item)
+	rQ, err := s.Radarr.GetQueue(10, 0)
+	if err != nil {
+		return result, err
+	}
+
+	sQ, err := s.Sonarr.GetQueue(10, 0)
+	if err != nil {
+		return result, err
+	}
+
+	for _, s := range sQ {
+		item := QueueItem{
+			ContentType:    "",
+			Title:          "",
+			Size:           0,
+			Quality:        0,
+			Status:         "",
+			TimeLeft:       "",
+			Indexer:        "",
+			DownloadClient: "",
 		}
-		result.Queue = items
-		c <- result
-		close(c)
-	}()
+		result = append(result, item)
+	}
 
-	return c
+	for _, r := range rQ {
+		item := QueueItem{
+			ContentType:    "",
+			Title:          "",
+			Size:           0,
+			Quality:        0,
+			Status:         "",
+			TimeLeft:       "",
+			Indexer:        "",
+			DownloadClient: "",
+		}
+		result = append(result, item)
+	}
+
+	return result, nil
 }
