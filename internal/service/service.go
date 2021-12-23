@@ -3,9 +3,9 @@ package service
 import (
 	"context"
 
-	"github.com/smantic/starr"
-	"github.com/smantic/starr/radarr"
-	"github.com/smantic/starr/sonarr"
+	"golift.io/starr"
+	"golift.io/starr/radarr"
+	"golift.io/starr/sonarr"
 )
 
 type ContentType string
@@ -36,27 +36,6 @@ func New(c *Config) Service {
 		Radarr: radarr.New(r),
 		Sonarr: sonarr.New(s),
 	}
-}
-
-// AddMovie will add a movie to radarr
-func (s *Service) AddMovie(ctx context.Context, m radarr.AddMovieInput) error {
-
-	_, err := s.Radarr.AddMovie(&m)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// AddShow will add a show to sonarr
-func (s *Service) AddShow(ctx context.Context, in sonarr.AddSeriesInput) error {
-
-	_, err := s.Sonarr.AddSeries(&in)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 // Send a command that start a search for missing.

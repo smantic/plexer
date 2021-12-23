@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/smantic/starr/radarr"
-	"github.com/smantic/starr/sonarr"
+	"golift.io/starr/radarr"
+	"golift.io/starr/sonarr"
 )
 
 type ContentInfo struct {

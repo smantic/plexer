@@ -3,29 +3,11 @@ package discord
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/smantic/plexer/pkg/radarr"
 )
-
-// getRadarrRootFolder gets radarr's download path.
-func (d *Discord) getRadarrRootFolder(ctx context.Context) <-chan radarr.RootFolderInfo {
-
-	c := make(chan radarr.RootFolderInfo)
-
-	go func() {
-		infos, err := d.service.Radarr.GetRootFolder(ctx)
-		if err != nil || len(infos) == 0 {
-			log.Printf("failed to get radarr root folder!! %v", err)
-		}
-		c <- infos[0]
-		close(c)
-	}()
-
-	return c
-}
 
 func (d *Discord) Add(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) error {
 

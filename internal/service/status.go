@@ -11,9 +11,9 @@ type FreeSpace struct {
 }
 
 type QueueItem struct {
-	ContentType string
+	ContentType ContentType
 	Title       string
-	Size        int
+	Size        float64
 	Quality     int
 
 	Status   string
@@ -35,6 +35,7 @@ func (s *Service) GetFreeSpace(ctx context.Context) (FreeSpace, error) {
 		result.FreeSpace += f.FreeSpace
 		result.Paths = append(result.Paths, f.Path)
 	}
+	//TODO: how does this work with other services.
 
 	return result, nil
 }
@@ -53,30 +54,30 @@ func (s *Service) GetQueue(ctx context.Context) ([]QueueItem, error) {
 		return result, err
 	}
 
-	for _, s := range sQ {
+	for _, s := range sQ.Records {
 		item := QueueItem{
-			ContentType:    "",
-			Title:          "",
-			Size:           0,
+			ContentType:    CONTENT_SHOW,
+			Title:          s.Title,
+			Size:           s.Size,
 			Quality:        0,
-			Status:         "",
-			TimeLeft:       "",
-			Indexer:        "",
-			DownloadClient: "",
+			Status:         s.Status,
+			TimeLeft:       s.Timeleft,
+			Indexer:        s.Indexer,
+			DownloadClient: s.DownloadClient,
 		}
 		result = append(result, item)
 	}
 
-	for _, r := range rQ {
+	for _, r := range rQ.Records {
 		item := QueueItem{
-			ContentType:    "",
-			Title:          "",
-			Size:           0,
-			Quality:        0,
-			Status:         "",
-			TimeLeft:       "",
-			Indexer:        "",
-			DownloadClient: "",
+			ContentType:    CONTENT_MOVIE,
+			Title:          r.Title,
+			Size:           r.Size,
+			Quality:        r.Quality.Quality.Resolution,
+			Status:         r.Status,
+			TimeLeft:       r.Timeleft,
+			Indexer:        r.Indexer,
+			DownloadClient: r.DownloadClient,
 		}
 		result = append(result, item)
 	}
