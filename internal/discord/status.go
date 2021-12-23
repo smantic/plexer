@@ -51,18 +51,17 @@ func (d *Discord) Queue(ctx context.Context, s *discordgo.Session, i *discordgo.
 		Data: &discordgo.InteractionResponseData{},
 	}
 
-	qChan := d.service.GetQueue(ctx)
-	queue := <-qChan
-	if queue.Err != nil {
-		return queue.Err
+	q, err := d.service.GetQueue(ctx)
+	if err != nil {
+		return err
 	}
 
 	data := response.Data
-	if len(queue.Queue) == 0 {
+	if len(q) == 0 {
 		data.Content = "nothing in the queue!"
 	}
 
-	for _, i := range queue.Queue {
+	for _, i := range q {
 		data.Embeds = append(data.Embeds, queueItemAsEmbed(i))
 	}
 
@@ -82,7 +81,7 @@ func queueItemAsEmbed(i service.QueueItem) *discordgo.MessageEmbed {
 			},
 			{
 				Name:   "Type",
-				Value:  i.ContentType,
+				Value:  string(i.ContentType),
 				Inline: true,
 			},
 			{
@@ -92,7 +91,7 @@ func queueItemAsEmbed(i service.QueueItem) *discordgo.MessageEmbed {
 			},
 			{
 				Name:   "Size",
-				Value:  strconv.Itoa(i.Size),
+				Value:  strconv.Itoa(int(i.Size)),
 				Inline: true,
 			},
 			{
@@ -103,11 +102,6 @@ func queueItemAsEmbed(i service.QueueItem) *discordgo.MessageEmbed {
 			{
 				Name:   "Time Left",
 				Value:  i.TimeLeft,
-				Inline: true,
-			},
-			{
-				Name:   "Estimated Completion",
-				Value:  i.EstimatedCompletionTime,
 				Inline: true,
 			},
 		},
