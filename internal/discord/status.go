@@ -15,10 +15,9 @@ func (d *Discord) DiskSpace(ctx context.Context, s *discordgo.Session, i *discor
 		Data: &discordgo.InteractionResponseData{},
 	}
 
-	diskSpaceChan := d.service.GetDiskSpaceInfo(ctx)
-	dSpace := <-diskSpaceChan
-	if dSpace.Err != nil {
-		return dSpace.Err
+	freeSpace, err := d.service.GetFreeSpace(ctx)
+	if err != nil {
+		return err
 	}
 
 	response.Data.Embeds = []*discordgo.MessageEmbed{
@@ -26,17 +25,17 @@ func (d *Discord) DiskSpace(ctx context.Context, s *discordgo.Session, i *discor
 			Type:        discordgo.EmbedTypeRich,
 			Description: "",
 			Fields: []*discordgo.MessageEmbedField{
-				{
-					Name:  "Total Space",
-					Value: strconv.Itoa(dSpace.TotalCapacity),
-				},
-				{
-					Name:  "Used Space",
-					Value: strconv.Itoa(dSpace.UsedCapacity),
-				},
+				//{
+				//	Name:  "Total Space",
+				//	Value: strconv.Itoa(dSpace.TotalCapacity),
+				//},
+				//{
+				//	Name:  "Used Space",
+				//	Value: strconv.Itoa(dSpace.UsedCapacity),
+				//},
 				{
 					Name:  "Free Space",
-					Value: strconv.Itoa(dSpace.FreeSpace),
+					Value: strconv.Itoa(int(freeSpace.FreeSpace)),
 				},
 			},
 		},

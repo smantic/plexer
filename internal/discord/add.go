@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/smantic/plexer/pkg/radarr"
+	"github.com/smantic/plexer/internal/service"
 )
 
 func (d *Discord) Add(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) error {
@@ -22,43 +22,31 @@ func (d *Discord) Add(ctx context.Context, s *discordgo.Session, i *discordgo.In
 	switch i.Type {
 	case discordgo.InteractionApplicationCommand:
 
-		rootFolderInfo := d.getRadarrRootFolder(ctx)
-
-		title := i.ApplicationCommandData().Options[0].StringValue()
-		title = strings.TrimSpace(title)
-
-		movies, err := d.service.Search(ctx, title)
+		title := strings.TrimSpace(i.ApplicationCommandData().Options[0].StringValue())
+		content, err := d.service.Search(ctx, "", title, 0)
 		if err != nil {
 			return fmt.Errorf("failed to search for movie to add: %w", err)
 		}
 
-		if len(movies) == 0 {
-			response.Data.Content = "couldn't find a movie to add like: " + title
+		if len(content) == 0 {
+			response.Data.Content = "couldn't find content to add like: " + title
 			break
 		}
 
-		var m radarr.Movie
-		for _, movie := range movies {
-			if movie.Title == title {
-				m = movie
+		var found service.ContentInfo
+		for _, c := range content {
+			if strings.EqualFold(c.Title, title) {
+				c = found
 				break
 			}
 		}
 
-		if len(m.Path) > 0 {
+		if !found.Added.IsZero() {
 			response.Data.Content = title + " is already added! "
 			break
 		}
 
-		info := <-rootFolderInfo
-		m.RootFolderPath = info.Path
-
-		if int(info.FreeSpace) < m.SizeOnDisk {
-			response.Data.Content = fmt.Sprintf("not enough space on disk!! only %d space left", info.FreeSpace)
-			break
-		}
-
-		err = d.service.Add(ctx, m)
+		err = d.service.Add(ctx, found)
 		if err != nil {
 			return fmt.Errorf("failed to add title: %w", err)
 		}
@@ -67,7 +55,7 @@ func (d *Discord) Add(ctx context.Context, s *discordgo.Session, i *discordgo.In
 
 	case discordgo.InteractionApplicationCommandAutocomplete:
 		query := i.ApplicationCommandData().Options[0].StringValue()
-		results, err := d.service.Search(ctx, query)
+		results, err := d.service.Search(ctx, "", query, 0)
 		if err != nil {
 			return fmt.Errorf("failed to search for auto completes: %w", err)
 		}
@@ -82,15 +70,15 @@ func (d *Discord) Add(ctx context.Context, s *discordgo.Session, i *discordgo.In
 	return s.InteractionRespond(i.Interaction, &response)
 }
 
-func getAutoCompleteChoicesFrom(movies []radarr.Movie) []*discordgo.ApplicationCommandOptionChoice {
+func getAutoCompleteChoicesFrom(content []service.ContentInfo) []*discordgo.ApplicationCommandOptionChoice {
 
-	choices := make([]*discordgo.ApplicationCommandOptionChoice, 0, len(movies))
-	for i, m := range movies {
-		c := discordgo.ApplicationCommandOptionChoice{
-			Name:  m.Title,
-			Value: m.Title,
+	choices := make([]*discordgo.ApplicationCommandOptionChoice, 0, len(content))
+	for i, c := range content {
+		choice := discordgo.ApplicationCommandOptionChoice{
+			Name:  c.Title,
+			Value: c.Title,
 		}
-		choices = append(choices, &c)
+		choices = append(choices, &choice)
 
 		if i >= 7 {
 			break

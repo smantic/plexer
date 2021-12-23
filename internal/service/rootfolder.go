@@ -3,8 +3,9 @@ package service
 import "context"
 
 type FolderInfo struct {
-	Path      string
-	FreeSpace int
+	Path        string
+	FreeSpace   int64
+	ContentType ContentType
 }
 
 // GetRootFolders gets all of the unique root folders.
@@ -56,16 +57,18 @@ func (s *Service) GetRootFolderInfos(ctx context.Context) ([]FolderInfo, error) 
 	result := make([]FolderInfo, 0, len(rf)+len(sf))
 	for _, f := range rf {
 		info := FolderInfo{
-			Path:      f.Path,
-			FreeSpace: int(f.FreeSpace),
+			Path:        f.Path,
+			FreeSpace:   f.FreeSpace,
+			ContentType: CONTENT_MOVIE,
 		}
 		result = append(result, info)
 	}
 
 	for _, f := range sf {
 		info := FolderInfo{
-			Path:      f.Path,
-			FreeSpace: int(f.FreeSpace),
+			Path:        f.Path,
+			FreeSpace:   f.FreeSpace,
+			ContentType: CONTENT_SHOW,
 		}
 		result = append(result, info)
 	}

@@ -19,7 +19,7 @@ var (
 				{
 					Type:         discordgo.ApplicationCommandOptionString,
 					Name:         "title",
-					Description:  "title of movie or show you want to add",
+					Description:  "title the content that you want to add",
 					Required:     true,
 					Autocomplete: true,
 				},
@@ -33,7 +33,7 @@ var (
 				{
 					Type:         discordgo.ApplicationCommandOptionString,
 					Name:         "title",
-					Description:  "title of movie or show you want to find",
+					Description:  "title of the content you want to find",
 					Required:     true,
 					Autocomplete: true,
 				},
@@ -50,7 +50,7 @@ var (
 			Type:        discordgo.ChatApplicationCommand,
 		},
 		{
-			Name:        "diskusage",
+			Name:        "du",
 			Description: "see disk usage",
 			Type:        discordgo.ChatApplicationCommand,
 		},

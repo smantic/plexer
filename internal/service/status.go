@@ -59,7 +59,7 @@ func (s *Service) GetQueue(ctx context.Context) ([]QueueItem, error) {
 			ContentType:    CONTENT_SHOW,
 			Title:          s.Title,
 			Size:           s.Size,
-			Quality:        0,
+			Quality:        s.Quality.ID,
 			Status:         s.Status,
 			TimeLeft:       s.Timeleft,
 			Indexer:        s.Indexer,
