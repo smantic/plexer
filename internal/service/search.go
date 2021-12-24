@@ -35,6 +35,10 @@ func (s *Service) Search(ctx context.Context, kind ContentType, query string, li
 		return nil, nil
 	}
 
+	if limit == 0 { // default page
+		limit = 10
+	}
+
 	var (
 		content = make([]ContentInfo, 0, limit)
 		err     error
@@ -69,6 +73,7 @@ func (s *Service) Search(ctx context.Context, kind ContentType, query string, li
 			return nil, y.err
 		}
 
+		// TODO log number of results for each type.
 		var i, j int
 		for { // zip merge
 			if (i >= len(x.data) && j >= len(y.data)) || i+j > limit {
@@ -83,10 +88,6 @@ func (s *Service) Search(ctx context.Context, kind ContentType, query string, li
 				j++
 			}
 		}
-	}
-
-	if limit == 0 { // default page
-		limit = 10
 	}
 
 	if limit > len(content) {

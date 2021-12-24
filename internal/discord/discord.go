@@ -158,7 +158,7 @@ func (d *Discord) HandleInteraction(ctx context.Context) interactionHandler {
 			err = d.Add(ctx, s, i)
 		case "search":
 			err = d.Search(ctx, s, i)
-		case "diskusage":
+		case "du":
 			err = d.DiskSpace(ctx, s, i)
 		case "queue":
 			err = d.Queue(ctx, s, i)
