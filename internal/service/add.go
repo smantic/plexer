@@ -39,7 +39,7 @@ func (s *Service) Add(ctx context.Context, content ContentInfo) error {
 	}
 }
 
-// AddMovie will add a movie to radarr
+// AddMovie will add a movie to radarr.
 func (s *Service) AddMovie(ctx context.Context, in ContentInfo, path string) error {
 
 	raw, ok := in.raw.(radarr.Movie)
@@ -73,7 +73,7 @@ func (s *Service) AddMovie(ctx context.Context, in ContentInfo, path string) err
 	return nil
 }
 
-// AddShow will add a show to sonarr
+// AddShow will add a show to sonarr.
 func (s *Service) AddShow(ctx context.Context, in ContentInfo, path string) error {
 
 	raw, ok := in.raw.(sonarr.SeriesLookup)

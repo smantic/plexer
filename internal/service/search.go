@@ -53,13 +53,13 @@ func (s *Service) Search(ctx context.Context, kind ContentType, query string, li
 
 		resultChan := make(chan searchResult, 2)
 		go func() {
-			movies, err := s.serachRadarr(ctx, query)
-			resultChan <- searchResult{movies, err}
+			movies, rerr := s.serachRadarr(ctx, query)
+			resultChan <- searchResult{movies, rerr}
 		}()
 
 		go func() {
-			serries, err := s.serachSonar(ctx, query)
-			resultChan <- searchResult{serries, err}
+			serries, serr := s.serachSonar(ctx, query)
+			resultChan <- searchResult{serries, serr}
 		}()
 
 		x := <-resultChan

@@ -9,7 +9,7 @@ type FolderInfo struct {
 }
 
 // GetRootFolders gets all of the unique root folders.
-// prbly will go unused
+// prbly will go unused.
 func (s *Service) GetRootFolderPaths(ctx context.Context) ([]string, error) {
 
 	m := make(map[string]struct{})
@@ -41,7 +41,7 @@ func (s *Service) GetRootFolderPaths(ctx context.Context) ([]string, error) {
 	return result, nil
 }
 
-// UpdateRootFolders will update our cached root folders
+// UpdateRootFolders will update our cached root folders.
 func (s *Service) GetRootFolderInfos(ctx context.Context) ([]FolderInfo, error) {
 
 	rf, err := s.Radarr.GetRootFolders()
