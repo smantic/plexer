@@ -2,57 +2,58 @@ package service
 
 import (
 	"context"
-	"log"
 
-	"github.com/smantic/plexer/pkg/radarr"
+	"golift.io/starr"
+	"golift.io/starr/radarr"
+	"golift.io/starr/sonarr"
 )
 
+type ContentType string
+
 const (
-	CONTENT_MOVIE string = "movie"
-	CONTENT_SHOW  string = "show"
+	CONTENT_MOVIE ContentType = "movie"
+	CONTENT_SHOW  ContentType = "show"
 )
 
 type Service struct {
-	Radarr *radarr.Client
+	Radarr *radarr.Radarr
+	Sonarr *sonarr.Sonarr
 }
 
-func (s *Service) Add(ctx context.Context, m radarr.Movie) error {
+type Config struct {
+	RadarrURL   string
+	RadarrKey   string
+	RadarrDebug bool
 
-	m.Monitored = true // automatic monitoring
-	if m.QualityProfileId == 0 {
-		m.QualityProfileId = 6
+	SonarrKey string
+	SonarrURL string
+}
+
+func New(c *Config) Service {
+	r := starr.New(c.RadarrKey, c.RadarrURL, 0)
+	s := starr.New(c.SonarrKey, c.SonarrURL, 0)
+	return Service{
+		Radarr: radarr.New(r),
+		Sonarr: sonarr.New(s),
 	}
+}
 
-	err := s.Radarr.AddMovie(ctx, &m)
-	if err != nil {
-		return err
-	}
+// Send a command that start a search for missing.
+func (s *Service) SearchForMissing(ctx context.Context, kind ContentType) error {
 
-	go func() {
-		// tell radarr to search for the newly added title
-		r := radarr.CommandPayload{
-			Name: radarr.CommandMissingMoviesSearch,
-		}
-		err := s.Radarr.PostCommand(ctx, r)
-
+	var err error
+	switch kind {
+	case CONTENT_MOVIE:
+		_, err = s.Sonarr.SendCommand(&sonarr.CommandRequest{Name: "missingEpisodeSearch"})
+	case CONTENT_SHOW:
+		_, err = s.Radarr.SendCommand(&radarr.CommandRequest{Name: "MissingMoviesSearch"})
+	default:
+		_, err = s.Radarr.SendCommand(&radarr.CommandRequest{Name: "MissingMoviesSearch"})
 		if err != nil {
-			log.Printf("failed to tell radar to search for missing movies: %v\n", err)
-			return
+			break
 		}
-	}()
-
-	return nil
-}
-
-// Search will serach for a title to add.
-func (s *Service) Search(ctx context.Context, query string) ([]radarr.Movie, error) {
-	if query == "" {
-		return nil, nil
-	}
-	movies, err := s.Radarr.Search(ctx, query)
-	if err != nil {
-		return nil, err
+		_, err = s.Sonarr.SendCommand(&sonarr.CommandRequest{Name: "missingEpisodeSearch"})
 	}
 
-	return movies, nil
+	return err
 }

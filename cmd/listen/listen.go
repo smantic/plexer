@@ -9,20 +9,17 @@ import (
 
 	"github.com/smantic/plexer/internal/discord"
 	"github.com/smantic/plexer/internal/service"
-	"github.com/smantic/plexer/pkg/radarr"
 )
 
 type Config struct {
 	DiscordToken    string
-	RadarrURL       string
-	RadarrKey       string
-	JackettURL      string
-	JackettKey      string
 	RefreshCommands bool
 	SkipRegrister   bool
 
 	// Debug will print response bodies to stdout
 	Debug bool
+
+	service.Config
 }
 
 func Run(args []string) {
@@ -31,11 +28,14 @@ func Run(args []string) {
 
 	flags := flag.NewFlagSet("", flag.ExitOnError)
 	flags.StringVar(&c.DiscordToken, "token", "", "token for the discord bot")
-	flags.StringVar(&c.RadarrURL, "radarURL", "http://localhost:7878/api/v3", "url of radar service")
-	flags.StringVar(&c.RadarrKey, "radarrKey", "", "radarr api key")
 	flags.BoolVar(&c.RefreshCommands, "refresh", false, "delete lingering commands, and re-add them")
 	flags.BoolVar(&c.Debug, "debug", false, "print out response bodies")
 	flags.BoolVar(&c.SkipRegrister, "skipRegister", false, "skip regerstering commands for faster bot startup")
+
+	flags.StringVar(&c.Config.RadarrURL, "radarURL", "http://localhost:7878", "url of radar service")
+	flags.StringVar(&c.Config.RadarrKey, "radarrKey", "", "radarr api key")
+	flags.StringVar(&c.Config.SonarrURL, "sonarrURL", "http://localhost:8989", "url of radar service")
+	flags.StringVar(&c.Config.SonarrKey, "sonarrKey", "", "sonarr api key")
 
 	err := flags.Parse(args)
 	if err != nil {
@@ -49,13 +49,8 @@ func Run(args []string) {
 	}
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
-	svc := service.Service{
-		Radarr: &radarr.Client{
-			BaseURL: c.RadarrURL,
-			Apikey:  c.RadarrKey,
-			Debug:   c.Debug,
-		},
-	}
+
+	svc := service.New(&c.Config)
 
 	s, err := discord.NewSession(c.DiscordToken, &svc)
 	if err != nil {
