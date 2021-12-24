@@ -23,8 +23,17 @@ type ContentInfo struct {
 	raw interface{}
 }
 
+type searchResult struct {
+	data []ContentInfo
+	err  error
+}
+
 // Search will serach for content and return some information.
 func (s *Service) Search(ctx context.Context, kind ContentType, query string, limit int) ([]ContentInfo, error) {
+
+	if query == "" {
+		return nil, nil
+	}
 
 	var (
 		content = make([]ContentInfo, 0, limit)
@@ -37,23 +46,40 @@ func (s *Service) Search(ctx context.Context, kind ContentType, query string, li
 	case CONTENT_MOVIE:
 		content, err = s.serachRadarr(ctx, query)
 	default:
-		movies, err := s.serachRadarr(ctx, query)
-		if err != nil {
-			return nil, err
+
+		resultChan := make(chan searchResult, 2)
+		go func() {
+			movies, err := s.serachRadarr(ctx, query)
+			resultChan <- searchResult{movies, err}
+		}()
+
+		go func() {
+			serries, err := s.serachSonar(ctx, query)
+			resultChan <- searchResult{serries, err}
+		}()
+
+		x := <-resultChan
+		y := <-resultChan
+		close(resultChan)
+
+		if x.err != nil {
+			return nil, x.err
 		}
-		serries, err := s.serachSonar(ctx, query)
+		if y.err != nil {
+			return nil, y.err
+		}
 
 		var i, j int
 		for { // zip merge
-			if i >= len(movies) && j >= len(movies) {
+			if (i >= len(x.data) && j >= len(y.data)) || i+j > limit {
 				break
 			}
-			if i < len(movies) {
-				content = append(content, movies[i])
+			if i < len(x.data) {
+				content = append(content, x.data[i])
 				i++
 			}
-			if j < len(serries) {
-				content = append(content, serries[j])
+			if j < len(y.data) {
+				content = append(content, y.data[j])
 				j++
 			}
 		}

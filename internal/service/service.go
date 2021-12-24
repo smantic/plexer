@@ -31,7 +31,7 @@ type Config struct {
 
 func New(c *Config) Service {
 	r := starr.New(c.RadarrKey, c.RadarrURL, 0)
-	s := starr.New(c.SonarrURL, c.SonarrURL, 0)
+	s := starr.New(c.SonarrKey, c.SonarrURL, 0)
 	return Service{
 		Radarr: radarr.New(r),
 		Sonarr: sonarr.New(s),

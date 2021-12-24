@@ -32,8 +32,10 @@ func Run(args []string) {
 	flags.BoolVar(&c.Debug, "debug", false, "print out response bodies")
 	flags.BoolVar(&c.SkipRegrister, "skipRegister", false, "skip regerstering commands for faster bot startup")
 
-	flags.StringVar(&c.Config.RadarrURL, "radarURL", "http://localhost:7878/api/v3", "url of radar service")
+	flags.StringVar(&c.Config.RadarrURL, "radarURL", "http://localhost:7878", "url of radar service")
 	flags.StringVar(&c.Config.RadarrKey, "radarrKey", "", "radarr api key")
+	flags.StringVar(&c.Config.SonarrURL, "sonarrURL", "http://localhost:8989", "url of radar service")
+	flags.StringVar(&c.Config.SonarrKey, "sonarrKey", "", "sonarr api key")
 
 	err := flags.Parse(args)
 	if err != nil {

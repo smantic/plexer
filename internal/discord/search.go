@@ -23,13 +23,18 @@ func (d *Discord) Search(ctx context.Context, s *discordgo.Session, i *discordgo
 	switch i.Type {
 	case discordgo.InteractionApplicationCommand:
 
-		query := i.ApplicationCommandData().Options[0].StringValue()
-		query = strings.TrimSpace(query)
+		query := strings.TrimSpace(
+			i.ApplicationCommandData().Options[0].StringValue(),
+		)
 		data := response.Data
 
 		content, err := d.service.Search(ctx, "", query, 0)
 		if err != nil {
 			return err
+		}
+
+		if len(content) == 0 {
+			data.Content = "could not find " + query
 		}
 
 		var c service.ContentInfo
@@ -38,10 +43,6 @@ func (d *Discord) Search(ctx context.Context, s *discordgo.Session, i *discordgo
 				c = i
 				break
 			}
-		}
-
-		if c.Title == "" {
-			data.Content = "could not find " + query
 		}
 
 		data.Embeds = []*discordgo.MessageEmbed{
