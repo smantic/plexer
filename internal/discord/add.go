@@ -24,7 +24,7 @@ func (d *Discord) Add(ctx context.Context, s *discordgo.Session, i *discordgo.In
 		// TODO record discord error in context
 		err := s.InteractionRespond(i.Interaction, &response)
 		if err != nil {
-			log.Println("discord: %s\n", err)
+			log.Printf("discord: %s\n", err.Error())
 		}
 	}()
 
