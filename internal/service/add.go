@@ -62,10 +62,11 @@ func (s *Service) AddMovie(ctx context.Context, in ContentInfo, path string) err
 			MinimumAvailability: raw.MinimumAvailability,
 			RootFolderPath:      path,
 			TmdbID:              raw.TmdbID,
-			QualityProfileID:    0,
-			ProfileID:           0,
-			Year:                in.Year,
-			Images:              raw.Images,
+			// TODO: dont hardcode this.
+			QualityProfileID: 9,
+			ProfileID:        0,
+			Year:             in.Year,
+			Images:           raw.Images,
 			AddOptions: &radarr.AddMovieOptions{
 				SearchForMovie:             true,
 				IgnoreEpisodesWithFiles:    false,
@@ -92,8 +93,9 @@ func (s *Service) AddShow(ctx context.Context, in ContentInfo, path string) erro
 
 	_, err := s.Sonarr.AddSeries(
 		&sonarr.AddSeriesInput{
-			TvdbID:            raw.TvdbID,
-			QualityProfileID:  0,
+			TvdbID: raw.TvdbID,
+			// TODO: dont hardcode this.
+			QualityProfileID:  9,
 			LanguageProfileID: raw.LanguageProfileID,
 			Tags:              raw.Tags,
 			RootFolderPath:    path,

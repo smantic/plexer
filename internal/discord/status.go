@@ -39,7 +39,7 @@ func (d *Discord) DiskSpace(ctx context.Context, s *discordgo.Session, i *discor
 				//},
 				{
 					Name:  "Free Space",
-					Value: strconv.FormatFloat(inMB, 'f', 3, 64),
+					Value: strconv.FormatFloat(inMB, 'f', 3, 64) + " MB",
 				},
 			},
 		},

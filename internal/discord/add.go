@@ -58,6 +58,7 @@ func (d *Discord) Add(ctx context.Context, s *discordgo.Session, i *discordgo.In
 		err = d.service.Add(ctx, found)
 		if err != nil {
 			response.Data.Content = fmt.Sprintf("failed to add title: %s", err.Error())
+			return
 		}
 
 		response.Data.Content = "added: " + title
