@@ -10,9 +10,17 @@ import (
 
 func (s *Service) Add(ctx context.Context, content ContentInfo) error {
 
+	if content.Title == "" || content.ContentType == "" {
+		return fmt.Errorf("missing content to add")
+	}
+
 	infos, err := s.GetRootFolderInfos(ctx)
 	if err != nil {
 		return err
+	}
+
+	if len(infos) == 0 {
+		return fmt.Errorf("found no root folders")
 	}
 
 	var found FolderInfo
@@ -24,8 +32,9 @@ func (s *Service) Add(ctx context.Context, content ContentInfo) error {
 	}
 
 	if found.Path == "" {
+		inMB := float64(content.Size) / float64(1000000)
 		return fmt.Errorf(
-			"could not find a folder with enough capcacity (%d MB)", content.Size/1000000,
+			"could not find a folder with enough capcacity (%f MB)", inMB,
 		)
 	}
 
@@ -85,7 +94,7 @@ func (s *Service) AddShow(ctx context.Context, in ContentInfo, path string) erro
 		&sonarr.AddSeriesInput{
 			TvdbID:            raw.TvdbID,
 			QualityProfileID:  0,
-			LanguageProfileID: 0,
+			LanguageProfileID: raw.LanguageProfileID,
 			Tags:              raw.Tags,
 			RootFolderPath:    path,
 			Title:             in.Title,

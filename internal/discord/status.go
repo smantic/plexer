@@ -2,6 +2,8 @@ package discord
 
 import (
 	"context"
+	"fmt"
+	"log"
 	"strconv"
 
 	"github.com/bwmarrin/discordgo"
@@ -15,10 +17,12 @@ func (d *Discord) DiskSpace(ctx context.Context, s *discordgo.Session, i *discor
 		Data: &discordgo.InteractionResponseData{},
 	}
 
-	freeSpace, err := d.service.GetFreeSpace(ctx)
+	freeSpace, err := d.service.GetTotalFreeSpace(ctx)
 	if err != nil {
 		return err
 	}
+
+	inMB := float64(freeSpace) / float64(1000000)
 
 	response.Data.Embeds = []*discordgo.MessageEmbed{
 		{
@@ -35,7 +39,7 @@ func (d *Discord) DiskSpace(ctx context.Context, s *discordgo.Session, i *discor
 				//},
 				{
 					Name:  "Free Space",
-					Value: strconv.Itoa(int(freeSpace.FreeSpace)),
+					Value: strconv.FormatFloat(inMB, 'f', 3, 64),
 				},
 			},
 		},
@@ -51,12 +55,19 @@ func (d *Discord) Queue(ctx context.Context, s *discordgo.Session, i *discordgo.
 		Data: &discordgo.InteractionResponseData{},
 	}
 
-	q, err := d.service.GetQueue(ctx)
-	if err != nil {
-		return err
-	}
+	defer func() {
+		err := s.InteractionRespond(i.Interaction, &response)
+		if err != nil {
+			log.Printf("discord: %s\n", err.Error())
+		}
+	}()
 
 	data := response.Data
+	q, err := d.service.GetQueue(ctx)
+	if err != nil {
+		data.Content = fmt.Sprintf("failed to get queue: %s", err.Error())
+	}
+
 	if len(q) == 0 {
 		data.Content = "nothing in the queue!"
 	}
@@ -65,7 +76,7 @@ func (d *Discord) Queue(ctx context.Context, s *discordgo.Session, i *discordgo.
 		data.Embeds = append(data.Embeds, queueItemAsEmbed(i))
 	}
 
-	return s.InteractionRespond(i.Interaction, &response)
+	return nil
 }
 
 func queueItemAsEmbed(i service.QueueItem) *discordgo.MessageEmbed {

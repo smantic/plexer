@@ -3,6 +3,7 @@ package discord
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
@@ -18,6 +19,14 @@ func (d *Discord) Add(ctx context.Context, s *discordgo.Session, i *discordgo.In
 			Flags: 1 << 6,
 		},
 	}
+
+	defer func() {
+		// TODO record discord error in context
+		err := s.InteractionRespond(i.Interaction, &response)
+		if err != nil {
+			log.Printf("discord: %s\n", err.Error())
+		}
+	}()
 
 	switch i.Type {
 	case discordgo.InteractionApplicationCommand:
@@ -48,7 +57,7 @@ func (d *Discord) Add(ctx context.Context, s *discordgo.Session, i *discordgo.In
 
 		err = d.service.Add(ctx, found)
 		if err != nil {
-			return fmt.Errorf("failed to add title: %w", err)
+			response.Data.Content = fmt.Sprintf("failed to add title: %s", err.Error())
 		}
 
 		response.Data.Content = "added: " + title
@@ -67,7 +76,7 @@ func (d *Discord) Add(ctx context.Context, s *discordgo.Session, i *discordgo.In
 		}
 	}
 
-	return s.InteractionRespond(i.Interaction, &response)
+	return nil
 }
 
 func getAutoCompleteChoicesFrom(content []service.ContentInfo) []*discordgo.ApplicationCommandOptionChoice {
