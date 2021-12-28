@@ -77,12 +77,13 @@ func (d *Discord) Search(ctx context.Context, s *discordgo.Session, i *discordgo
 						Inline: true,
 					},
 					{
-						Name:  "Overview",
-						Value: strconv.FormatFloat(inMB, 'f', 3, 64),
+						Name:   "Size",
+						Value:  strconv.FormatFloat(inMB, 'f', 3, 64),
+						Inline: true,
 					},
 					{
-						Name:  "Size",
-						Value: strconv.FormatInt(c.Size, 10),
+						Name:  "Overview",
+						Value: c.Overview,
 					},
 				},
 			},
