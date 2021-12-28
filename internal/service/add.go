@@ -34,7 +34,7 @@ func (s *Service) Add(ctx context.Context, content ContentInfo) error {
 	if found.Path == "" {
 		inMB := float64(content.Size) / float64(1000000)
 		return fmt.Errorf(
-			"could not find a folder with enough capcacity (%d MB)", inMB,
+			"could not find a folder with enough capcacity (%f MB)", inMB,
 		)
 	}
 

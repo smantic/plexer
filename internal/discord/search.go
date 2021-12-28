@@ -45,6 +45,7 @@ func (d *Discord) Search(ctx context.Context, s *discordgo.Session, i *discordgo
 			}
 		}
 
+		inMB := float64(c.Size) / float64(1000000)
 		data.Embeds = []*discordgo.MessageEmbed{
 			{
 				Type:        discordgo.EmbedTypeRich,
@@ -77,7 +78,11 @@ func (d *Discord) Search(ctx context.Context, s *discordgo.Session, i *discordgo
 					},
 					{
 						Name:  "Overview",
-						Value: fmt.Sprintf("%s\n", c.Overview),
+						Value: strconv.FormatFloat(inMB, 'f', 3, 64),
+					},
+					{
+						Name:  "Size",
+						Value: strconv.FormatInt(c.Size, 10),
 					},
 				},
 			},
