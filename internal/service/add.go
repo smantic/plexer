@@ -14,7 +14,7 @@ func (s *Service) Add(ctx context.Context, content ContentInfo) error {
 		return fmt.Errorf("missing content to add")
 	}
 
-	infos, err := s.GetRootFolderInfos(ctx)
+	infos, err := s.GetRootFolderInfos(ctx, content.ContentType)
 	if err != nil {
 		return err
 	}

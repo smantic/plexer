@@ -40,7 +40,7 @@ func (d *Discord) Add(ctx context.Context, s *discordgo.Session, i *discordgo.In
 		var found service.ContentInfo
 		for _, c := range content {
 			if c.Title == title {
-				c = found
+				found = c
 				break
 			}
 		}

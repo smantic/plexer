@@ -99,14 +99,15 @@ func (s *Service) Search(ctx context.Context, kind ContentType, query string, li
 
 func contentInfoFromSerries(s sonarr.SeriesLookup) ContentInfo {
 	return ContentInfo{
-		Title:     s.Title,
-		Year:      s.Year,
-		Genre:     s.Genres,
-		Overview:  s.Overview,
-		ImdbID:    s.ImdbID,
-		Added:     s.Added,
-		Monitored: s.Monitored,
-		Size:      s.Statistics.SizeOnDisk,
+		Title:       s.Title,
+		Year:        s.Year,
+		Genre:       s.Genres,
+		Overview:    s.Overview,
+		ImdbID:      s.ImdbID,
+		Added:       s.Added,
+		Monitored:   s.Monitored,
+		Size:        s.Statistics.SizeOnDisk,
+		ContentType: CONTENT_SHOW,
 
 		raw: s,
 	}
@@ -114,14 +115,15 @@ func contentInfoFromSerries(s sonarr.SeriesLookup) ContentInfo {
 
 func contentInfoFromMovie(m radarr.Movie) ContentInfo {
 	return ContentInfo{
-		Title:     m.Title,
-		Year:      m.Year,
-		Genre:     m.Genres,
-		Overview:  m.Overview,
-		ImdbID:    m.ImdbID,
-		Added:     m.Added,
-		Monitored: m.Monitored,
-		Size:      m.SizeOnDisk,
+		Title:       m.Title,
+		Year:        m.Year,
+		Genre:       m.Genres,
+		Overview:    m.Overview,
+		ImdbID:      m.ImdbID,
+		Added:       m.Added,
+		Monitored:   m.Monitored,
+		Size:        m.SizeOnDisk,
+		ContentType: CONTENT_MOVIE,
 
 		raw: m,
 	}
