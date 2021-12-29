@@ -95,8 +95,8 @@ func (s *Service) AddShow(ctx context.Context, in ContentInfo, path string) erro
 		&sonarr.AddSeriesInput{
 			TvdbID: raw.TvdbID,
 			// TODO: dont hardcode this.
-			QualityProfileID:  9,
-			LanguageProfileID: raw.LanguageProfileID,
+			QualityProfileID:  1,
+			LanguageProfileID: 1,
 			Tags:              raw.Tags,
 			RootFolderPath:    path,
 			Title:             in.Title,
