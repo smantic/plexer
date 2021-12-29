@@ -37,22 +37,22 @@ func (d *Discord) Add(ctx context.Context, s *discordgo.Session, i *discordgo.In
 			return fmt.Errorf("failed to search for movie to add: %w", err)
 		}
 
-		if len(content) == 0 {
-			response.Data.Content = "couldn't find content to add like: " + title
-			break
-		}
-
 		var found service.ContentInfo
 		for _, c := range content {
-			if strings.EqualFold(c.Title, title) {
-				c = found
+			if c.Title == title {
+				found = c
 				break
 			}
 		}
 
+		if found.Title == "" {
+			response.Data.Content = "couldn't find content to add like: " + title
+			return nil
+		}
+
 		if !found.Added.IsZero() {
 			response.Data.Content = title + " is already added! "
-			break
+			return nil
 		}
 
 		err = d.service.Add(ctx, found)

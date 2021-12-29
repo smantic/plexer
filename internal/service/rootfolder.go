@@ -73,28 +73,55 @@ func (s *Service) GetRootFolderPaths(ctx context.Context) ([]string, error) {
 }
 
 // GetRootFolderInfos will get the root folder info for each service.
-func (s *Service) GetRootFolderInfos(ctx context.Context) ([]FolderInfo, error) {
+func (s *Service) GetRootFolderInfos(ctx context.Context, kind ContentType) ([]FolderInfo, error) {
 
-	rf, err := s.Radarr.GetRootFolders()
-	if err != nil {
-		return nil, fmt.Errorf("failed to find sonarr root folders: %w", err)
+	switch kind {
+	case CONTENT_MOVIE:
+		rf, err := s.Radarr.GetRootFolders()
+		if err != nil {
+			return nil, fmt.Errorf("failed to find sonarr root folders: %w", err)
+		}
+
+		result := make([]FolderInfo, 0, len(rf))
+		for _, f := range rf {
+			result = append(result, infoFromRadarr(f))
+		}
+
+		return result, nil
+	case CONTENT_SHOW:
+		sf, err := s.Sonarr.GetRootFolders()
+		if err != nil {
+			return nil, fmt.Errorf("failed to find sonarr root folders: %w", err)
+		}
+
+		result := make([]FolderInfo, 0, len(sf))
+		for _, f := range sf {
+			result = append(result, infoFromSonarr(f))
+		}
+
+		return result, nil
+	default:
+		rf, err := s.Radarr.GetRootFolders()
+		if err != nil {
+			return nil, fmt.Errorf("failed to find sonarr root folders: %w", err)
+		}
+
+		sf, err := s.Sonarr.GetRootFolders()
+		if err != nil {
+			return nil, fmt.Errorf("failed to find sonarr root folders: %w", err)
+		}
+
+		result := make([]FolderInfo, 0, len(rf)+len(sf))
+		for _, f := range rf {
+			result = append(result, infoFromRadarr(f))
+		}
+
+		for _, f := range sf {
+			result = append(result, infoFromSonarr(f))
+		}
+
+		return result, nil
 	}
-
-	sf, err := s.Sonarr.GetRootFolders()
-	if err != nil {
-		return nil, fmt.Errorf("failed to find sonarr root folders: %w", err)
-	}
-
-	result := make([]FolderInfo, 0, len(rf)+len(sf))
-	for _, f := range rf {
-		result = append(result, infoFromRadarr(f))
-	}
-
-	for _, f := range sf {
-		result = append(result, infoFromSonarr(f))
-	}
-
-	return result, nil
 }
 
 func infoFromSonarr(f *sonarr.RootFolder) FolderInfo {
