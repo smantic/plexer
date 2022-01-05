@@ -104,18 +104,18 @@ func (d *Discord) Search(ctx context.Context, s *discordgo.Session, i *discordgo
 		//		Description: "",
 		//	})
 		//}
-	case discordgo.InteractionApplicationCommandAutocomplete:
+		//case discordgo.InteractionApplicationCommandAutocomplete:
 
-		query := i.ApplicationCommandData().Options[0].StringValue()
-		results, err := d.service.Search(ctx, "", query, 0)
-		if err != nil {
-			return fmt.Errorf("failed to search for auto completes: %w", err)
-		}
+		//	query := i.ApplicationCommandData().Options[0].StringValue()
+		//	results, err := d.service.Search(ctx, "", query, 0)
+		//	if err != nil {
+		//		return fmt.Errorf("failed to search for auto completes: %w", err)
+		//	}
 
-		response.Type = discordgo.InteractionApplicationCommandAutocompleteResult
-		response.Data = &discordgo.InteractionResponseData{
-			Choices: getAutoCompleteChoicesFrom(results),
-		}
+		//	response.Type = discordgo.InteractionApplicationCommandAutocompleteResult
+		//	response.Data = &discordgo.InteractionResponseData{
+		//		Choices: getAutoCompleteChoicesFrom(results),
+		//	}
 	}
 	return s.InteractionRespond(i.Interaction, &response)
 }

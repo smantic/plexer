@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/smantic/libs/discord/imux"
 	"github.com/smantic/plexer/internal/service"
 )
 
@@ -17,11 +18,57 @@ var (
 			Type:        discordgo.ChatApplicationCommand,
 			Options: []*discordgo.ApplicationCommandOption{
 				{
-					Type:         discordgo.ApplicationCommandOptionString,
-					Name:         "title",
-					Description:  "title the content that you want to add",
+					Type:         discordgo.ApplicationCommandOptionSubCommand,
+					Name:         "movie",
+					Description:  "add a movie",
 					Required:     true,
 					Autocomplete: true,
+					Options: []*discordgo.ApplicationCommandOption{
+						{
+							Type:         discordgo.ApplicationCommandOptionString,
+							Name:         "title",
+							Description:  "title of the movie that you want to add",
+							Required:     true,
+							Autocomplete: true,
+						},
+						{
+							Type:         discordgo.ApplicationCommandOptionString,
+							Name:         "quality",
+							Description:  "quality to download the content in",
+							Required:     false,
+							Autocomplete: true,
+						},
+					},
+				},
+				{
+					Type:         discordgo.ApplicationCommandOptionSubCommand,
+					Name:         "show",
+					Description:  "add a show",
+					Required:     true,
+					Autocomplete: true,
+					Options: []*discordgo.ApplicationCommandOption{
+						{
+							Type:         discordgo.ApplicationCommandOptionString,
+							Name:         "title",
+							Description:  "title the show that you want to add",
+							Required:     true,
+							Autocomplete: true,
+						},
+						{
+							Type:         discordgo.ApplicationCommandOptionString,
+							Name:         "season",
+							Description:  "season to add",
+							Required:     true,
+							Autocomplete: true,
+						},
+						{
+							Type:         discordgo.ApplicationCommandOptionString,
+							Name:         "quality",
+							Description:  "quality to download the content in",
+							Required:     false,
+							Autocomplete: true,
+						},
+					},
 				},
 			},
 		},
@@ -62,6 +109,7 @@ type Discord struct {
 	token   string
 	session *discordgo.Session
 	service *service.Service
+	i       *imux.InteractionMux
 }
 
 // NewSession creates a new session.
@@ -90,7 +138,17 @@ func (d *Discord) Close() {
 // if refresh is true we will delete all the old commands and re-add them.
 func (d *Discord) Init(ctx context.Context, refresh bool, skip bool) error {
 
-	d.session.AddHandler(d.HandleInteraction(ctx))
+	i := imux.NewInteractionMux(ctx)
+	i.Use(imux.LogInteraction)
+
+	i.Add("add movie", d.AddMovie)
+	i.Add("add show", d.AddShow)
+	i.Add("search", nil)
+	i.Add("du", nil)
+	i.Add("queue", nil)
+	i.Add("ping", Ping)
+
+	d.session.AddHandler(i.Serve())
 	d.session.AddHandler(d.Connected(ctx, refresh, skip))
 
 	err := d.session.Open()
@@ -146,42 +204,12 @@ func (d *Discord) Connected(ctx context.Context, refresh bool, skip bool) readyH
 	}
 }
 
-type interactionHandler = func(s *discordgo.Session, i *discordgo.InteractionCreate)
+func Ping(response *discordgo.InteractionResponse, request *imux.InteractionRequest) {
 
-func (d *Discord) HandleInteraction(ctx context.Context) interactionHandler {
-
-	return func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-		name := i.ApplicationCommandData().Name
-		var err error
-		switch name {
-		case "add":
-			err = d.Add(ctx, s, i)
-		case "search":
-			err = d.Search(ctx, s, i)
-		case "du":
-			err = d.DiskSpace(ctx, s, i)
-		case "queue":
-			err = d.Queue(ctx, s, i)
-		case "ping":
-			d.Ping(s, i)
-		default:
-			log.Printf("didn't recognize command: %s\n", name)
-		}
-		if err != nil {
-			log.Println(err)
-		}
-	}
-}
-
-func (d *Discord) Ping(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	log.Printf("pinged by %s\n", i.Member.User.ID)
-
-	response := discordgo.InteractionResponse{
+	response = &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{Content: "pong!"},
 	}
-	err := s.InteractionRespond(i.Interaction, &response)
-	if err != nil {
-		log.Println(err)
-	}
+
+	imux.Respond(response, request)
 }
