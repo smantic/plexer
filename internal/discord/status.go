@@ -1,9 +1,7 @@
 package discord
 
 import (
-	"context"
 	"fmt"
-	"log"
 	"strconv"
 
 	"github.com/bwmarrin/discordgo"
@@ -42,35 +40,24 @@ func (d *Discord) DiskSpace(response *discordgo.InteractionResponse, request *im
 	imux.Respond(response, request)
 }
 
-func (d *Discord) Queue(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) error {
+func (d *Discord) Queue(response *discordgo.InteractionResponse, request *imux.InteractionRequest) {
 
-	var response discordgo.InteractionResponse = discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{},
-	}
-
-	defer func() {
-		err := s.InteractionRespond(i.Interaction, &response)
-		if err != nil {
-			log.Printf("discord: %s\n", err.Error())
-		}
-	}()
-
-	data := response.Data
-	q, err := d.service.GetQueue(ctx)
+	q, err := d.service.GetQueue(request.Context)
 	if err != nil {
-		data.Content = fmt.Sprintf("failed to get queue: %s", err.Error())
+		err = fmt.Errorf("failed to get queue: %w\n", err)
+		respondWithErr(response, request, err)
 	}
 
 	if len(q) == 0 {
-		data.Content = "nothing in the queue!"
+		response.Data.Content = "nothing in the queue!"
 	}
 
 	for _, i := range q {
-		data.Embeds = append(data.Embeds, queueItemAsEmbed(i))
+		response.Data.Embeds = append(response.Data.Embeds, queueItemAsEmbed(i))
 	}
 
-	return nil
+	imux.Respond(response, request)
+	return
 }
 
 func queueItemAsEmbed(i service.QueueItem) *discordgo.MessageEmbed {

@@ -145,7 +145,7 @@ func (d *Discord) Init(ctx context.Context, refresh bool, skip bool) error {
 	i.Add("add show", d.AddShow)
 	i.Add("search", d.Search)
 	i.Add("du", d.DiskSpace)
-	i.Add("queue", nil)
+	i.Add("queue", d.Queue)
 	i.Add("ping", Ping)
 
 	d.session.AddHandler(i.Serve())
