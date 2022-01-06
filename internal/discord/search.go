@@ -1,64 +1,57 @@
 package discord
 
 import (
-	"context"
 	"fmt"
 	"strconv"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/smantic/libs/discord/imux"
 	"github.com/smantic/plexer/internal/service"
 )
 
-func (d *Discord) Search(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) error {
+func (d *Discord) Search(response *discordgo.InteractionResponse, request *imux.InteractionRequest) {
 
-	// start with a hidden resposne
-	var response discordgo.InteractionResponse = discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Flags: 1 << 6,
-		},
-	}
+	ctx := request.Context
+	cmd := request.Interaction.ApplicationCommandData()
 
-	switch i.Type {
+	switch cmd.Type() {
 	case discordgo.InteractionApplicationCommand:
+		var title = cmd.Options[0].StringValue()
 
-		query := strings.TrimSpace(
-			i.ApplicationCommandData().Options[0].StringValue(),
-		)
-		data := response.Data
-
-		content, err := d.service.Search(ctx, "", query, 0)
+		content, err := d.service.Search(ctx, "", title, SEARCH_RESULTS_LIMIT)
 		if err != nil {
-			return err
+			err := fmt.Errorf("failed to search content: %w", err)
+			respondWithErr(response, request, err)
+			return
 		}
 
 		if len(content) == 0 {
-			data.Content = "could not find " + query
+			response.Data.Content = "no results for " + title
 		}
 
-		var c service.ContentInfo
-		for _, i := range content {
-			if strings.EqualFold(i.Title, query) {
-				c = i
+		var found service.ContentInfo
+		for _, c := range content {
+			if strings.EqualFold(c.Title, title) {
+				found = c
 				break
 			}
 		}
 
-		inMB := float64(c.Size) / float64(1000000)
-		data.Embeds = []*discordgo.MessageEmbed{
+		inMB := float64(found.Size) / float64(1000000)
+		response.Data.Embeds = []*discordgo.MessageEmbed{
 			{
 				Type:        discordgo.EmbedTypeRich,
 				Description: "",
 				Fields: []*discordgo.MessageEmbedField{
 					{
 						Name:   "Title",
-						Value:  fmt.Sprintf("%s (%d)\n", c.Title, c.Year),
+						Value:  fmt.Sprintf("%s (%d)\n", found.Title, found.Year),
 						Inline: true,
 					},
 					{
 						Name:   "added",
-						Value:  strconv.FormatBool(!c.Added.IsZero()),
+						Value:  strconv.FormatBool(!found.Added.IsZero()),
 						Inline: true,
 					},
 
@@ -73,7 +66,7 @@ func (d *Discord) Search(ctx context.Context, s *discordgo.Session, i *discordgo
 					},
 					{
 						Name:   "Imdb",
-						Value:  c.ImdbID,
+						Value:  found.ImdbID,
 						Inline: true,
 					},
 					{
@@ -83,39 +76,14 @@ func (d *Discord) Search(ctx context.Context, s *discordgo.Session, i *discordgo
 					},
 					{
 						Name:  "Overview",
-						Value: c.Overview,
+						Value: found.Overview,
 					},
 				},
 			},
 		}
 
-		if len(c.Genre) > 0 {
-			data.Embeds[0].Fields[2].Value = c.Genre[0]
-		}
-
-		//if len(c.Images) > 0 {
-		//	image := c.Images[0]
-		//	data.Embeds = append(data.Embeds, &discordgo.MessageEmbed{
-		//		Image: &discordgo.MessageEmbedImage{
-		//			URL: image.RemoteUrl,
-		//		},
-		//		URL:         image.RemoteUrl,
-		//		Type:        discordgo.EmbedTypeImage,
-		//		Description: "",
-		//	})
-		//}
-		//case discordgo.InteractionApplicationCommandAutocomplete:
-
-		//	query := i.ApplicationCommandData().Options[0].StringValue()
-		//	results, err := d.service.Search(ctx, "", query, 0)
-		//	if err != nil {
-		//		return fmt.Errorf("failed to search for auto completes: %w", err)
-		//	}
-
-		//	response.Type = discordgo.InteractionApplicationCommandAutocompleteResult
-		//	response.Data = &discordgo.InteractionResponseData{
-		//		Choices: getAutoCompleteChoicesFrom(results),
-		//	}
+	case discordgo.InteractionApplicationCommandAutocomplete:
+		d.searchAutoCompleteAndRespond(service.CONTENT_MOVIE, cmd.Options[0].StringValue(), response, request)
+		return
 	}
-	return s.InteractionRespond(i.Interaction, &response)
 }

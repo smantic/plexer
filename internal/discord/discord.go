@@ -143,7 +143,7 @@ func (d *Discord) Init(ctx context.Context, refresh bool, skip bool) error {
 
 	i.Add("add movie", d.AddMovie)
 	i.Add("add show", d.AddShow)
-	i.Add("search", nil)
+	i.Add("search", d.Search)
 	i.Add("du", nil)
 	i.Add("queue", nil)
 	i.Add("ping", Ping)
