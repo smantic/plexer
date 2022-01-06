@@ -7,45 +7,39 @@ import (
 	"strconv"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/smantic/libs/discord/imux"
 	"github.com/smantic/plexer/internal/service"
 )
 
-func (d *Discord) DiskSpace(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) error {
+func (d *Discord) DiskSpace(response *discordgo.InteractionResponse, request *imux.InteractionRequest) {
 
-	var response discordgo.InteractionResponse = discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{},
-	}
-
-	freeSpace, err := d.service.GetTotalFreeSpace(ctx)
+	freeSpace, err := d.service.GetTotalFreeSpace(request.Context)
 	if err != nil {
-		return err
+		err = fmt.Errorf("failed to get total free space: %w\n", err)
+		respondWithErr(response, request, err)
+		return
 	}
 
 	inMB := float64(freeSpace) / float64(1000000)
-
-	response.Data.Embeds = []*discordgo.MessageEmbed{
-		{
-			Type:        discordgo.EmbedTypeRich,
-			Description: "",
-			Fields: []*discordgo.MessageEmbedField{
-				//{
-				//	Name:  "Total Space",
-				//	Value: strconv.Itoa(dSpace.TotalCapacity),
-				//},
-				//{
-				//	Name:  "Used Space",
-				//	Value: strconv.Itoa(dSpace.UsedCapacity),
-				//},
+	response = &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Embeds: []*discordgo.MessageEmbed{
 				{
-					Name:  "Free Space",
-					Value: strconv.FormatFloat(inMB, 'f', 3, 64) + " MB",
+					Type:        discordgo.EmbedTypeRich,
+					Description: "",
+					Fields: []*discordgo.MessageEmbedField{
+						{
+							Name:  "Free Space",
+							Value: strconv.FormatFloat(inMB, 'f', 3, 64) + " MB",
+						},
+					},
 				},
 			},
 		},
 	}
 
-	return s.InteractionRespond(i.Interaction, &response)
+	imux.Respond(response, request)
 }
 
 func (d *Discord) Queue(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) error {
